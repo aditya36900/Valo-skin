@@ -74,6 +74,30 @@ class LauncherConfig : public ConfigObject {
                 { u"command"_s, QStringList{ u"autocomplete"_s, u"agent"_s } },
             }),
             vmap({
+                { u"name"_s, u"Clipboard"_s },
+                { u"icon"_s, u"content_paste_search"_s },
+                { u"description"_s, u"Clipboard history: search, pin, paste (Stash)"_s },
+                { u"command"_s, QStringList{ u"autocomplete"_s, u"clip"_s } },
+            }),
+            vmap({
+                { u"name"_s, u"Night Ops"_s },
+                { u"icon"_s, u"nightlight"_s },
+                { u"description"_s, u"Toggle the blue-light filter"_s },
+                { u"command"_s, QStringList{ u"valorant"_s, u"nightops"_s } },
+            }),
+            vmap({
+                { u"name"_s, u"Check updates"_s },
+                { u"icon"_s, u"system_update_alt"_s },
+                { u"description"_s, u"Look for system, Flatpak and firmware updates (Patch Notes)"_s },
+                { u"command"_s, QStringList{ u"valorant"_s, u"updates"_s } },
+            }),
+            vmap({
+                { u"name"_s, u"Ring phone"_s },
+                { u"icon"_s, u"ring_volume"_s },
+                { u"description"_s, u"Find your phone through KDE Connect (Uplink)"_s },
+                { u"command"_s, QStringList{ u"valorant"_s, u"ring"_s } },
+            }),
+            vmap({
                 { u"name"_s, u"Next agent"_s },
                 { u"icon"_s, u"skip_next"_s },
                 { u"description"_s, u"Lock in the next Valorant agent theme"_s },

@@ -158,3 +158,6 @@ hl.bind("SUPER + ALT + T", hl.dsp.exec_cmd("qs -c caelestia ipc call layout next
 -- Hyprland has no minimize: park the window on the bench (special:minimized), call it back
 hl.bind("SUPER + ALT + M", hl.dsp.exec_cmd("qs -c caelestia ipc call bench minimize"))
 hl.bind("SUPER + ALT + SHIFT + M", hl.dsp.exec_cmd("qs -c caelestia ipc call bench restore"))
+hl.bind("SUPER + SHIFT + V", hl.dsp.exec_cmd("qs -c caelestia ipc call stash open")) -- clipboard history
+hl.bind("SUPER + ALT + N", hl.dsp.exec_cmd("qs -c caelestia ipc call nightops toggle")) -- blue-light filter
+hl.bind("SUPER + ALT + P", hl.dsp.exec_cmd("qs -c caelestia ipc call uplink ring")) -- find my phone

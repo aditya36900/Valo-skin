@@ -23,6 +23,9 @@ StyledRect {
     readonly property int nonAnimHeight: summary.implicitHeight + (root.expanded ? Tokens.spacing.extraSmall * 2 + appName.height + body.height + actions.height + actions.anchors.topMargin : bodyPreview.height) + inner.anchors.margins * 2
     property bool expanded: Config.notifs.openExpanded
     readonly property bool killBanner: Valorant.hudOn("killBanners")
+    // Valo-skin "Uplink": banners relayed from your phone by KDE Connect, incoming calls in teal
+    readonly property bool uplink: /kde ?connect/i.test(modelData.appName)
+    readonly property bool uplinkCall: uplink && /call|calling/i.test(`${modelData.summary} ${modelData.body}`) && !/missed/i.test(modelData.summary)
     readonly property color baseColour: root.modelData.urgency === NotificationUrgency.Critical ? Colours.palette.m3secondaryContainer : Colours.tPalette.m3surfaceContainer
 
     color: killBanner ? "transparent" : baseColour
@@ -51,7 +54,47 @@ StyledRect {
 
         sourceComponent: KillBannerBg {
             color: root.modelData.urgency === NotificationUrgency.Critical ? Colours.palette.m3errorContainer : Colours.tPalette.m3surfaceContainer
-            accent: root.modelData.urgency === NotificationUrgency.Critical ? Valorant.red : root.modelData.urgency === NotificationUrgency.Low ? Colours.palette.m3outline : Colours.palette.m3primary
+            accent: root.uplinkCall ? Valorant.teal : root.modelData.urgency === NotificationUrgency.Critical ? Valorant.red : root.modelData.urgency === NotificationUrgency.Low ? Colours.palette.m3outline : Colours.palette.m3primary
+        }
+    }
+
+    // Uplink tag in the bottom-right corner: phone banners and incoming calls
+    Row {
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.rightMargin: Tokens.padding.medium + Valorant.chamferSmall
+        anchors.bottomMargin: 3
+        visible: root.uplink && root.killBanner
+        spacing: 3
+        z: 2
+
+        MaterialIcon {
+            anchors.verticalCenter: parent.verticalCenter
+            text: root.uplinkCall ? "phone_in_talk" : "smartphone"
+            color: root.uplinkCall ? Valorant.teal : Colours.palette.m3primary
+            fill: 1
+            fontStyle: Tokens.font.icon.builders.small.scale(0.8).build()
+
+            SequentialAnimation on opacity {
+                running: root.uplinkCall
+                loops: Animation.Infinite
+
+                NumberAnimation {
+                    to: 0.3
+                    duration: 500
+                }
+                NumberAnimation {
+                    to: 1
+                    duration: 500
+                }
+            }
+        }
+
+        StyledText {
+            anchors.verticalCenter: parent.verticalCenter
+            text: root.uplinkCall ? qsTr("Incoming call") : qsTr("Uplink")
+            color: root.uplinkCall ? Valorant.teal : Colours.palette.m3primary
+            font: Tokens.font.label.builders.small.scale(0.8).build()
         }
     }
 

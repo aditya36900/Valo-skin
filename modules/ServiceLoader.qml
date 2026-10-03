@@ -14,6 +14,15 @@ Scope {
         Brightness;
         Weather.reload();
 
+        // Valo-skin: background watchers and IPC targets (keybinds) must exist from login
+        Bench;
+        Layouts;
+        Stash;
+        NightOps;
+        Uplink;
+        Spotted;
+        PatchNotes;
+
         if (GlobalConfig.utilities.vpn.enabled)
             VPN;
     }

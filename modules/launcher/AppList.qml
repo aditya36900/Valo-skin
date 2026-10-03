@@ -29,7 +29,7 @@ StyledListView {
     function stateForText(text: string): string {
         const prefix = GlobalConfig.launcher.actionPrefix;
         if (text.startsWith(prefix)) {
-            const modes = ["calc", "scheme", "variant"];
+            const modes = ["calc", "scheme", "variant", "clip"];
             if (Valorant.hudOn("agentSelectLauncher"))
                 modes.push("agent");
             for (const action of modes)
@@ -54,6 +54,8 @@ StyledListView {
             return M3Variants.query(text);
         case "agent":
             return Agents.query(text);
+        case "clip":
+            return Stash.query(text);
         default:
             return Apps.search(text);
         }
@@ -92,6 +94,8 @@ StyledListView {
     onStateChanged: {
         if (state === "scheme" || state === "variant")
             Schemes.reload();
+        if (state === "clip")
+            Stash.refresh();
     }
 
     Component.onCompleted: displayText = search.text
@@ -130,6 +134,13 @@ StyledListView {
 
             PropertyChanges {
                 root.delegate: variantItem
+            }
+        },
+        State {
+            name: "clip"
+
+            PropertyChanges {
+                root.delegate: clipItem
             }
         },
         State {
@@ -295,6 +306,14 @@ StyledListView {
         id: variantItem
 
         VariantItem {
+            list: root
+        }
+    }
+
+    Component {
+        id: clipItem
+
+        ClipItem {
             list: root
         }
     }

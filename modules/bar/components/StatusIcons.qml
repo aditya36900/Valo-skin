@@ -39,6 +39,12 @@ StyledRect {
     function collapsed(entry: var): bool {
         if (entry.id === "lockStatus")
             return !Hypr.capsLock && !Hypr.numLock;
+        if (entry.id === "privacy")
+            return !Spotted.any;
+        if (entry.id === "phone")
+            return !Uplink.installed;
+        if (entry.id === "updates")
+            return PatchNotes.total === 0;
         return false;
     }
 
@@ -141,6 +147,122 @@ StyledRect {
                     }
                 }
                 DelegateChoice {
+                    roleValue: "privacy"
+                    delegate: EntryWrapper {
+                        Item {
+                            visible: Spotted.any
+                            implicitWidth: visible ? privacyColumn.implicitWidth : 0
+                            implicitHeight: visible ? privacyColumn.implicitHeight : 0
+
+                            Column {
+                                id: privacyColumn
+
+                                spacing: 2
+
+                                Repeater {
+                                    model: [
+                                        {
+                                            on: Spotted.mic.length > 0,
+                                            icon: "mic"
+                                        },
+                                        {
+                                            on: Spotted.camera.length > 0,
+                                            icon: "videocam"
+                                        },
+                                        {
+                                            on: Spotted.screen.length > 0,
+                                            icon: "screen_share"
+                                        }
+                                    ]
+
+                                    MaterialIcon {
+                                        required property var modelData
+
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        visible: modelData.on
+                                        text: modelData.icon
+                                        color: Valorant.red
+                                        fill: 1
+                                        fontStyle: Tokens.font.icon.small
+
+                                        SequentialAnimation on opacity {
+                                            running: Spotted.any
+                                            loops: Animation.Infinite
+
+                                            NumberAnimation {
+                                                to: 0.45
+                                                duration: 700
+                                            }
+                                            NumberAnimation {
+                                                to: 1
+                                                duration: 700
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                DelegateChoice {
+                    roleValue: "phone"
+                    delegate: EntryWrapper {
+                        charge: Uplink.phone && Uplink.phone.battery >= 0 ? Uplink.phone.battery / 100 : -1
+
+                        Item {
+                            visible: Uplink.installed
+                            implicitWidth: visible ? phoneIcon.implicitWidth : 0
+                            implicitHeight: visible ? phoneIcon.implicitHeight : 0
+
+                            MaterialIcon {
+                                id: phoneIcon
+
+                                animate: true
+                                text: !Uplink.phone ? "phonelink_off" : Uplink.phone.charging ? "mobile_charge" : "smartphone"
+                                color: Uplink.phone ? root.colour : Colours.palette.m3outline
+                                fill: Uplink.phone ? 1 : 0
+                            }
+                        }
+                    }
+                }
+                DelegateChoice {
+                    roleValue: "updates"
+                    delegate: EntryWrapper {
+                        Item {
+                            visible: PatchNotes.total > 0
+                            implicitWidth: visible ? updIcon.implicitWidth : 0
+                            implicitHeight: visible ? updIcon.implicitHeight : 0
+
+                            MaterialIcon {
+                                id: updIcon
+
+                                text: "system_update_alt"
+                                color: root.colour
+                            }
+
+                            StyledRect {
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                anchors.rightMargin: -6
+                                anchors.topMargin: -4
+                                implicitWidth: Math.max(implicitHeight, countText.implicitWidth + 4)
+                                implicitHeight: countText.implicitHeight
+                                radius: 0
+                                color: Valorant.red
+
+                                StyledText {
+                                    id: countText
+
+                                    anchors.centerIn: parent
+                                    text: PatchNotes.total > 99 ? "99+" : PatchNotes.total
+                                    color: Valorant.white
+                                    font: Tokens.font.label.builders.small.scale(0.75).build()
+                                }
+                            }
+                        }
+                    }
+                }
+                DelegateChoice {
                     roleValue: "battery"
                     delegate: EntryWrapper {
                         charge: UPower.displayDevice.isLaptopBattery ? UPower.displayDevice.percentage : -1
@@ -163,7 +285,7 @@ StyledRect {
         readonly property bool present: !root.collapsed(modelData)
         // Valorant ability slot: chamfered frame, keybind hint and charge pips (charge < 0 hides them)
         property real charge: -1
-        readonly property bool slotted: Valorant.hudOn("abilitySlots") && modelData.id !== "lockStatus"
+        readonly property bool slotted: Valorant.hudOn("abilitySlots") && modelData.id !== "lockStatus" && present
         readonly property real slotSize: Tokens.sizes.bar.innerWidth - Tokens.padding.small
         readonly property real pipsHeight: charge >= 0 ? 5 : 0
         property ChamferRect frame: ChamferRect {

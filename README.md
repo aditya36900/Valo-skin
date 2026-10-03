@@ -56,6 +56,12 @@ switch at any time.
 | **Auto-tiling + layout switch** (`SUPER+ALT+T`): dwindle / master / scrolling, shown in the bar | ✅ |
 | **Agent portraits** on the wallpaper and login screen, downloaded on your machine with `valo-agent-art` / `--agent-art` (not shipped) | ✅ |
 | **Your name** on the lock screen, dashboard, welcome banner, login screen and boot splash (`--player`) | ✅ |
+| **Uplink**: your phone on the desktop through KDE Connect. Battery and signal in the bar; ring, screenshot, clipboard, files, browse storage, SMS; phone notifications and incoming calls as kill banners | ✅ |
+| **Stash**: clipboard history (cliphist) with image thumbnails, search and pins (`SUPER+SHIFT+V`, `>clip`) | ✅ |
+| **Night Ops**: blue-light filter (hyprsunset) on a schedule or sunset/sunrise, with a warmth slider | ✅ |
+| **Spotted**: red privacy pips when an app uses your mic, camera or screen | ✅ |
+| **Patch Notes**: dnf/pacman/AUR, Flatpak and firmware updates in the bar, update all in one click | ✅ |
+| **Konsole theme** that follows the agent: translucent scheme, accent cursor, HUD tab bar | ✅ |
 | **Coding-tools installer** (`--dev`): VS Code + extensions, JupyterLab + data-science kernel, Python/uv, Node, Rust, Go, Java, C/C++, Docker/Podman, databases, cloud CLIs, JetBrains Toolbox ([docs](docs/DEV-TOOLS.md)) | ✅ |
 
 ## Previews

@@ -119,6 +119,21 @@ Item {
             sourceComponent: LockStatus {}
         }
 
+        Popout {
+            name: "phone"
+            sourceComponent: UplinkPopout {}
+        }
+
+        Popout {
+            name: "updates"
+            sourceComponent: PatchNotesPopout {}
+        }
+
+        Popout {
+            name: "privacy"
+            sourceComponent: SpottedPopout {}
+        }
+
         Repeater {
             model: ScriptModel {
                 values: SystemTray.items.values.filter(i => !GlobalConfig.bar.tray.hiddenIcons.includes(i.id))

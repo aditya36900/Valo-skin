@@ -340,7 +340,8 @@ PY
         run sudo rm -rf /usr/share/plymouth/themes/valo-skin
         say "Plymouth theme reset to ${prev} (rebuild your initramfs to apply)"
     fi
-    run rm -f -- "${bin_dir}/valo-sync" "${bin_dir}/valo-cursors" "${bin_dir}/valo-agent-art"
+    run rm -f -- "${bin_dir}/valo-sync" "${bin_dir}/valo-cursors" "${bin_dir}/valo-agent-art" \
+        "${bin_dir}/valo-uplink" "${bin_dir}/valo-spotted" "${bin_dir}/valo-updates"
     [[ -d "${data_home}/valo-skin/agent-art" ]] && note "Downloaded agent art kept in ${data_home/#${HOME}/\~}/valo-skin/agent-art (valo-agent-art --remove deletes it)"
     say "Done. Backups of edited files: ${backup_dir/#${HOME}/\~}"
     note "The shell itself is left installed at ${qs_dir/#${HOME}/\~}; remove it manually if you want."
@@ -362,7 +363,8 @@ if (( do_deps )); then
                 pipewire aubio libqalculate lm_sensors fftw ddcutil brightnessctl \
                 networkmanager swappy wl-clipboard grim slurp playerctl fish \
                 hyprland xdg-desktop-portal-hyprland \
-                kitty fastfetch qt5ct qt6ct ttf-cascadia-code-nerd
+                kitty fastfetch qt5ct qt6ct ttf-cascadia-code-nerd \
+                kdeconnect cliphist wl-clipboard hyprsunset pacman-contrib fwupd grim
             aur=""
             for h in paru yay; do command -v "$h" >/dev/null && { aur="$h"; break; }; done
             if [[ -n "$aur" ]]; then
@@ -374,6 +376,10 @@ if (( do_deps )); then
         fedora)
             note "Shell dependencies are installed by scripts/install-fedora.sh below."
             run sudo dnf install -y python3 kitty fastfetch qt5ct qt6ct
+            # Uplink, Stash, Night Ops, Spotted, Patch Notes (one by one: a missing package won't stop the rest)
+            for pkg in kdeconnectd cliphist wl-clipboard hyprsunset pipewire-utils fwupd grim kdialog; do
+                run sudo dnf install -y "$pkg" >/dev/null 2>&1 || note "optional package not installed: $pkg"
+            done
             ;;
         *)
             say "Unsupported distro for automatic packages; continuing (use --no-deps to silence)."
@@ -406,7 +412,14 @@ fi
 if (( do_dots )); then
     step "Tools and fonts"
     run mkdir -p "$bin_dir" "${data_home}/fonts/valo-skin"
-    run install -m 0755 "${src}/dots/bin/valo-sync" "${src}/dots/bin/valo-cursors" "${src}/dots/bin/valo-agent-art" "$bin_dir/"
+    run install -m 0755 "${src}/dots/bin/valo-sync" "${src}/dots/bin/valo-cursors" "${src}/dots/bin/valo-agent-art" \
+        "${src}/dots/bin/valo-uplink" "${src}/dots/bin/valo-spotted" "${src}/dots/bin/valo-updates" "$bin_dir/"
+    # KDE Connect (Uplink) needs ports 1714-1764 open to find the phone
+    if command -v firewall-cmd >/dev/null && firewall-cmd --state >/dev/null 2>&1 \
+        && ! firewall-cmd --list-services 2>/dev/null | grep -qw kdeconnect; then
+        run sudo firewall-cmd --permanent --add-service=kdeconnect && run sudo firewall-cmd --reload \
+            && say "firewall: opened KDE Connect ports for Uplink"
+    fi
     run cp -f "${src}"/assets/fonts/*.ttf "${data_home}/fonts/valo-skin/"
     command -v fc-cache >/dev/null && run fc-cache -f "${data_home}/fonts/valo-skin"
     [[ ":${PATH}:" == *":${bin_dir}:"* ]] || say "Add ${bin_dir} to PATH so the shell can run valo-sync."

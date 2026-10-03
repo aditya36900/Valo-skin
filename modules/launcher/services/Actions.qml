@@ -51,6 +51,12 @@ Searcher {
                     Valorant.set("overrideScheme", !Valorant.overrideScheme);
                 else if (command[1] === "agent" && command.length > 2)
                     Valorant.setAgent(command[2]);
+                else if (command[1] === "nightops")
+                    NightOps.toggle();
+                else if (command[1] === "updates")
+                    PatchNotes.check();
+                else if (command[1] === "ring")
+                    Uplink.ring();
             } else if (command[0] === "setMode" && command.length > 1) {
                 list.screenState.launcher = false;
                 Colours.setMode(command[1]);

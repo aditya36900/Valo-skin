@@ -1,0 +1,98 @@
+#!/usr/bin/env python3
+"""valo-spotted: what is using your microphone, camera or screen right now ("Spotted").
+
+Prints JSON: {"mic": [apps], "camera": [apps], "screen": [apps]}.
+
+  - mic: running PipeWire capture streams (Stream/Input/Audio), minus monitors of speakers
+    and the shell's own audio visualiser
+  - camera: PipeWire video streams fed by a camera (v4l2/libcamera), plus processes holding
+    /dev/video* open directly (Chrome, Zoom, OBS...)
+  - screen: PipeWire video streams fed by the screencast portal
+
+Needs pw-dump (pipewire-utils). Standard library only.
+"""
+
+import json
+import os
+import subprocess
+import sys
+
+# Our own capture streams, never worth a privacy warning
+IGNORE_APPS = {"quickshell", ".quickshell-wrapped", "qs", "cava", "caelestia-shell", "pavucontrol",
+               "pwvucontrol", "easyeffects", "wireplumber", "pipewire"}
+
+
+def pw_objects():
+    try:
+        out = subprocess.run(["pw-dump", "--no-colors"], capture_output=True, text=True, timeout=5).stdout
+        return json.loads(out or "[]")
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return []
+
+
+def app_name(props):
+    for key in ("application.name", "application.process.binary", "node.description", "node.name"):
+        v = props.get(key)
+        if v:
+            return str(v)
+    return "Unknown app"
+
+
+def ignored(props):
+    names = {str(props.get(k, "")).lower() for k in ("application.name", "application.process.binary", "node.name")}
+    return bool(names & IGNORE_APPS) or props.get("stream.monitor") in (True, "true") \
+        or props.get("stream.capture.sink") in (True, "true")
+
+
+def scan():
+    objs = pw_objects()
+    nodes = {o["id"]: o for o in objs if o.get("type") == "PipeWire:Interface:Node"}
+    links = [o for o in objs if o.get("type") == "PipeWire:Interface:Link"]
+
+    def props(n):
+        return (n.get("info") or {}).get("props") or {}
+
+    def running(n):
+        return (n.get("info") or {}).get("state") == "running"
+
+    mic, camera, screen = set(), set(), set()
+    for nid, n in nodes.items():
+        p = props(n)
+        cls = p.get("media.class", "")
+        if not running(n) or ignored(p):
+            continue
+        if cls == "Stream/Input/Audio":
+            # Recording from a speaker monitor isn't the microphone
+            sources = [nodes.get(l["info"]["output-node-id"]) for l in links
+                       if (l.get("info") or {}).get("input-node-id") == nid]
+            if any(s and "monitor" in str(props(s).get("node.name", "")).lower() for s in sources):
+                continue
+            mic.add(app_name(p))
+        elif cls == "Stream/Input/Video":
+            sources = [nodes.get(l["info"]["output-node-id"]) for l in links
+                       if (l.get("info") or {}).get("input-node-id") == nid]
+            is_cam = any(s and props(s).get("device.api") in ("v4l2", "libcamera") for s in sources)
+            (camera if is_cam else screen).add(app_name(p))
+
+    # Apps opening the camera device directly (only our own processes are visible)
+    for pid in os.listdir("/proc"):
+        if not pid.isdigit():
+            continue
+        fd_dir = f"/proc/{pid}/fd"
+        try:
+            for fd in os.listdir(fd_dir):
+                if os.readlink(f"{fd_dir}/{fd}").startswith("/dev/video"):
+                    with open(f"/proc/{pid}/comm") as f:
+                        name = f.read().strip()
+                    if name.lower() not in IGNORE_APPS and name not in ("pipewire", "wireplumber"):
+                        camera.add(name)
+                    break
+        except OSError:
+            continue
+
+    return {"mic": sorted(mic), "camera": sorted(camera), "screen": sorted(screen)}
+
+
+if __name__ == "__main__":
+    json.dump(scan(), sys.stdout)
+    print()

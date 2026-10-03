@@ -126,12 +126,23 @@ Item {
             }
         }
 
-        Component.onCompleted: forceActiveFocus()
+        Component.onCompleted: {
+            if (Stash.pendingQuery) {
+                text = Stash.pendingQuery;
+                Stash.pendingQuery = "";
+            }
+            forceActiveFocus();
+        }
 
         Connections {
             function onLauncherChanged(): void {
-                if (!root.screenState.launcher)
+                if (!root.screenState.launcher) {
                     search.text = "";
+                } else if (Stash.pendingQuery) {
+                    // SUPER+V: open straight into the clipboard history
+                    search.text = Stash.pendingQuery;
+                    Stash.pendingQuery = "";
+                }
             }
 
             function onSessionChanged(): void {

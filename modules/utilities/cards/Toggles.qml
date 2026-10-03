@@ -131,6 +131,14 @@ StyledRect {
                     }
                 }
                 DelegateChoice {
+                    roleValue: "nightOps"
+                    delegate: Toggle {
+                        icon: "nightlight"
+                        checked: NightOps.active
+                        onClicked: NightOps.toggle()
+                    }
+                }
+                DelegateChoice {
                     roleValue: "dnd"
                     delegate: Toggle {
                         icon: "notifications_off"

@@ -75,6 +75,7 @@ class UtilitiesConfig : public ConfigObject {
             LIST_ENTRY(mic, true),
             LIST_ENTRY(settings, true),
             LIST_ENTRY(gameMode, true),
+            LIST_ENTRY(nightOps, true), // Valo-skin: blue-light filter
             LIST_ENTRY(dnd, true),
             LIST_ENTRY(vpn, false),
         })

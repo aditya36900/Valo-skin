@@ -1,0 +1,136 @@
+#!/usr/bin/env python3
+"""valo-updates: pending system updates for the Valo-skin shell ("Patch Notes").
+
+    valo-updates check     JSON: {"system": [...], "flatpak": [...], "firmware": [...], "aur": [...]}
+    valo-updates apply     run the updates interactively (open this in a terminal)
+
+Fedora: dnf (+ Flatpak, fwupd). Arch: checkupdates/pacman (+ paru/yay for the AUR).
+Standard library only; nothing here needs root except `apply`.
+"""
+
+import json
+import shutil
+import subprocess
+import sys
+import time
+
+
+def run(cmd, timeout=240):
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        return r.returncode, r.stdout
+    except (OSError, subprocess.SubprocessError):
+        return -1, ""
+
+
+def dnf():
+    # dnf4 and dnf5 both: exit 100 = updates available, lines "name.arch  version  repo"
+    code, out = run(["dnf", "-q", "check-update"])
+    pkgs = []
+    if code not in (0, 100):
+        return pkgs, code != -1
+    for line in out.splitlines():
+        parts = line.split()
+        if len(parts) != 3 or line.startswith((" ", "Obsoleting", "Last metadata")) or "." not in parts[0]:
+            continue
+        name, _, arch = parts[0].rpartition(".")
+        pkgs.append({"name": name, "version": parts[1], "source": parts[2], "arch": arch})
+    return pkgs, False
+
+
+def pacman():
+    tool = ["checkupdates"] if shutil.which("checkupdates") else ["pacman", "-Qu"]
+    code, out = run(tool)
+    pkgs = []
+    for line in out.splitlines():
+        parts = line.split()
+        if len(parts) >= 4 and parts[2] == "->":
+            pkgs.append({"name": parts[0], "version": parts[3], "from": parts[1], "source": "pacman"})
+    return pkgs, code not in (0, 1, 2)
+
+
+def aur():
+    helper = next((h for h in ("paru", "yay") if shutil.which(h)), None)
+    if not helper:
+        return [], False
+    code, out = run([helper, "-Qua"])
+    pkgs = []
+    for line in out.splitlines():
+        parts = line.split()
+        if len(parts) >= 4 and parts[2] == "->":
+            pkgs.append({"name": parts[0], "version": parts[3], "from": parts[1], "source": "aur"})
+    return pkgs, False
+
+
+def flatpak():
+    if not shutil.which("flatpak"):
+        return [], False
+    code, out = run(["flatpak", "remote-ls", "--updates", "--columns=application,version,origin"])
+    pkgs = []
+    for line in out.splitlines():
+        parts = line.split("\t")
+        if parts and parts[0] and "." in parts[0]:
+            pkgs.append({"name": parts[0], "version": parts[1] if len(parts) > 1 else "",
+                         "source": parts[2] if len(parts) > 2 else "flathub"})
+    return pkgs, code not in (0,)
+
+
+def firmware():
+    if not shutil.which("fwupdmgr"):
+        return [], False
+    code, out = run(["fwupdmgr", "get-updates", "--json", "--no-unreported-check", "--no-metadata-check"], timeout=60)
+    pkgs = []
+    try:
+        for dev in json.loads(out or "{}").get("Devices", []):
+            for rel in dev.get("Releases", [])[:1]:
+                pkgs.append({"name": dev.get("Name", "Device"), "version": rel.get("Version", ""), "source": "fwupd"})
+    except ValueError:
+        pass
+    return pkgs, False
+
+
+def check():
+    result = {"time": int(time.time()), "system": [], "flatpak": [], "firmware": [], "aur": [], "errors": []}
+    if shutil.which("dnf"):
+        result["system"], err = dnf()
+        result["manager"] = "dnf"
+    elif shutil.which("pacman"):
+        result["system"], err = pacman()
+        result["aur"], _ = aur()
+        result["manager"] = "pacman"
+    else:
+        err = False
+        result["manager"] = ""
+    if err:
+        result["errors"].append("system")
+    result["flatpak"], ferr = flatpak()
+    if ferr:
+        result["errors"].append("flatpak")
+    result["firmware"], _ = firmware()
+    result["total"] = sum(len(result[k]) for k in ("system", "flatpak", "firmware", "aur"))
+    print(json.dumps(result))
+    return 0
+
+
+def apply():
+    steps = []
+    if shutil.which("dnf"):
+        steps.append(["sudo", "dnf", "upgrade", "--refresh"])
+    elif shutil.which("paru") or shutil.which("yay"):
+        steps.append([next(h for h in ("paru", "yay") if shutil.which(h)), "-Syu"])
+    elif shutil.which("pacman"):
+        steps.append(["sudo", "pacman", "-Syu"])
+    if shutil.which("flatpak"):
+        steps.append(["flatpak", "update"])
+    if shutil.which("fwupdmgr"):
+        steps.append(["fwupdmgr", "update"])
+    for cmd in steps:
+        print(f"\n\033[1;38;2;255;70;85m// {' '.join(cmd)}\033[0m")
+        subprocess.call(cmd)
+    input("\nPatch applied. Press Enter to close.")
+    return 0
+
+
+if __name__ == "__main__":
+    arg = sys.argv[1] if len(sys.argv) > 1 else "check"
+    sys.exit(apply() if arg == "apply" else check())

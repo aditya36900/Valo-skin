@@ -122,12 +122,15 @@ class BarConfig : public ConfigObject {
     CONFIG_LIST(EntryList, statusIcons,
         {
             LIST_ENTRY(lockStatus, true),
+            LIST_ENTRY(privacy, true), // Valo-skin "Spotted": mic/camera/screen in use (hidden otherwise)
             LIST_ENTRY(audio, true), // Valo-skin: shown as an ability slot with volume charge
             LIST_ENTRY(microphone, false),
             LIST_ENTRY(kbLayout, false),
             LIST_ENTRY(network, true),
             LIST_ENTRY(bluetooth, true),
             LIST_ENTRY(battery, true),
+            LIST_ENTRY(phone, true), // Valo-skin "Uplink": KDE Connect phone (hidden if not installed)
+            LIST_ENTRY(updates, true), // Valo-skin "Patch Notes": pending updates (hidden if none)
         })
     CONFIG_LIST(EntryList, entries,
         {

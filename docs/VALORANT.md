@@ -20,6 +20,24 @@ the shell log, so the defaults are used until you fix it.
 | `agentArt` | bool | `true` | Show the current agent's portrait (and name art) over the wallpaper. Needs the art downloaded once with `valo-agent-art` (or `./install.sh --agent-art`); Valo-skin doesn't ship Riot artwork. |
 | `layouts` | string[] | `["dwindle", "master", "scrolling"]` | Hyprland layouts that `SUPER+ALT+T` and the bar's layout button cycle through. Ones your Hyprland doesn't support are skipped. |
 
+## Utilities (Phase 1)
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `stash.enabled` | bool | `true` | **Stash** clipboard history: runs `wl-paste --watch cliphist store` for text and images. Open with `SUPER+SHIFT+V` or `>clip` in the launcher; pins live in `~/.local/share/caelestia/stash-pins.json` and survive "clear". |
+| `nightOps.mode` | `"off"` \| `"on"` \| `"schedule"` \| `"sun"` | `"schedule"` | **Night Ops** blue-light filter (hyprsunset). `sun` uses local sunset/sunrise from the weather service. |
+| `nightOps.temperature` | 1500–6500 | `4000` | Warmth in kelvin while engaged. |
+| `nightOps.start` / `nightOps.end` | `"HH:MM"` | `"19:30"` / `"06:30"` | Schedule window. |
+| `nightOps.card` | bool | `true` | Show the Night Ops card in the utilities panel. |
+| `spotted` | bool | `true` | **Spotted** privacy pips: red mic/camera/screen icons in the bar while an app uses them. |
+| `patchNotes.enabled` | bool | `true` | **Patch Notes**: check for dnf/pacman/AUR, Flatpak and firmware updates. |
+| `patchNotes.intervalHours` | number | `3` | How often to check. |
+
+**Uplink** (KDE Connect) needs no config: install KDE Connect on the PC and the app on your phone and
+pair them. The bar then shows the phone with its battery as charge pips; the popout has Ring,
+Screenshot, Clipboard, Send file, Browse (phone storage) and Messages. Phone notifications and calls
+arrive as kill banners tagged **Uplink** (calls in teal, pulsing).
+
 ## `player`
 
 | Key | Type | Default | Description |
@@ -164,6 +182,12 @@ Two more IPC targets come with the bar:
 | `bench restoreAll` / `bench list` | Restore everything / print benched windows |
 | `layout next` | Next tiling layout, also `SUPER+ALT+T` |
 | `layout set <name>` / `layout get` | Set or print the layout |
+
+| `stash open` / `stash wipe` | Clipboard history in the launcher (`SUPER+SHIFT+V`) / clear it (pins kept) |
+| `nightops toggle` / `enable` / `disable` | Blue-light filter (`SUPER+ALT+N`) |
+| `nightops mode <off\|on\|schedule\|sun>` / `temperature <K>` / `status` | |
+| `uplink ring` / `screenshot` / `clipboard` / `status` | Find my phone (`SUPER+ALT+P`), send a screenshot or the clipboard |
+| `updates check` / `count` / `apply` | Patch Notes |
 
 Hyprland has no real minimize, so windows whose own minimize button is pressed are moved to the bench
 too. The bar shows benched windows (and any other window on a hidden special workspace) as app

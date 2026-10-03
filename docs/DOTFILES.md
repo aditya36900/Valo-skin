@@ -22,6 +22,7 @@ small colour *include* files and reloads what it can. Your own config files are 
 | Firefox / LibreWolf / Zen (`--firefox`) | `<profile>/chrome/valorant-colors.css` + static `valorant.css` | `@import` in `userChrome.css`, pref in `user.js` | restart |
 | Vesktop / Vencord / Equibop | `~/.config/<client>/themes/valorant.theme.css` | enable it in Settings → Themes | automatic |
 | Spicetify | `~/.config/spicetify/Themes/Valorant/` (`color.ini` scheme `agent`) | `spicetify config current_theme Valorant` | `spicetify refresh -s` |
+| Konsole | `~/.local/share/konsole/Valorant.{colorscheme,profile}` + `~/.local/share/valo-skin/konsole-tabs.css` | `DefaultProfile=Valorant.profile` and the tab-bar stylesheet in `konsolerc` | new windows |
 | JupyterLab / Notebook 7 | `~/.jupyter/custom/custom.css` | `c.LabApp.custom_css = True` (set by `dev-tools.sh --only jupyter`) | reload the page |
 
 App themes are only generated when the app is installed (Firefox only for profiles you opt in
@@ -56,6 +57,9 @@ only `custom_palette=false` (the default).
 | `SUPER+ALT+T` | Next tiling layout |
 | `SUPER+ALT+M` | Minimize the focused window to the bench |
 | `SUPER+ALT+SHIFT+M` | Restore the last benched window |
+| `SUPER+SHIFT+V` | Clipboard history (Stash) |
+| `SUPER+ALT+N` | Night Ops blue-light filter |
+| `SUPER+ALT+P` | Ring your phone (Uplink) |
 
 It's loaded *after* your own settings, so it wins on conflicts. To change something, put your
 override after the `require("valorant")` / `source` line.
