@@ -134,7 +134,7 @@ void BlobShape::updatePolish() {
     m_group->ensurePhysicsUpdated();
 
     const QPointF scenePos = mapToScene(QPointF(0, 0));
-    const float pad = static_cast<float>(m_group->smoothing());
+    const float pad = static_cast<float>(m_group->blendReach());
 
     if (isInvertedRect()) {
         m_cachedPaddedX = static_cast<float>(scenePos.x());
@@ -397,6 +397,7 @@ QSGNode* BlobShape::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData*) {
     material->m_paddedW = m_cachedPaddedW;
     material->m_paddedH = m_cachedPaddedH;
     material->m_smoothFactor = static_cast<float>(m_group->smoothing());
+    material->m_chamfer = m_group->chamfer() ? 1.0f : 0.0f;
     material->m_myIndex = m_cachedMyIndex;
     material->m_color = m_group->color();
     material->m_hasInverted = m_cachedHasInverted ? 1 : 0;

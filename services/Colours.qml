@@ -27,6 +27,7 @@ Singleton {
 
     property bool cooldownPending
     property real lastBaseTransparency
+    property string lastSchemeData
 
     function getLuminance(c: color): real {
         if (c.r == 0 && c.g == 0 && c.b == 0)
@@ -61,7 +62,10 @@ Singleton {
 
     function load(data: string, isPreview: bool): void {
         const colours = isPreview ? preview : current;
-        const scheme = JSON.parse(data);
+        if (!isPreview)
+            lastSchemeData = data;
+        // The Valorant palette replaces the wallpaper/CLI scheme while active
+        const scheme = !isPreview && Valorant.active ? Valorant.scheme() : JSON.parse(data);
 
         if (!isPreview) {
             root.scheme = scheme.name;
@@ -79,6 +83,10 @@ Singleton {
     }
 
     function setMode(mode: string): void {
+        if (Valorant.active) {
+            Valorant.set("mode", mode);
+            return;
+        }
         Quickshell.execDetached(["caelestia", "scheme", "set", "--notify", "-m", mode]);
     }
 
@@ -103,7 +111,11 @@ Singleton {
         }
     }
 
-    Component.onCompleted: root.requestReloadHyprRules()
+    Component.onCompleted: {
+        root.requestReloadHyprRules();
+        if (Valorant.active)
+            root.load("", false);
+    }
 
     Connections {
         function onConfigReloaded(): void {
@@ -111,6 +123,17 @@ Singleton {
         }
 
         target: Hypr
+    }
+
+    Connections {
+        function onSchemeInputsChanged(): void {
+            if (Valorant.active)
+                root.load("", false);
+            else if (root.lastSchemeData)
+                root.load(root.lastSchemeData, false);
+        }
+
+        target: Valorant
     }
 
     FileView {

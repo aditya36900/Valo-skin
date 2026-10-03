@@ -34,7 +34,8 @@ Item {
     BlobGroup {
         id: blobGroup
 
-        smoothing: root.Tokens.rounding.medium
+        smoothing: Valorant.chamferPanels ? Valorant.chamferSmall : Math.max(1, root.Tokens.rounding.medium)
+        chamfer: Valorant.chamferPanels
         color: root.blobColour
     }
 
@@ -42,7 +43,7 @@ Item {
         anchors.fill: parent
         group: blobGroup
         opacity: root.blobColour.a
-        radius: Tokens.rounding.large
+        radius: Valorant.chamferPanels ? Valorant.chamfer : Tokens.rounding.large
 
         borderLeft: navPane.width + navPane.anchors.margins * 2
         borderRight: Tokens.padding.medium
@@ -59,7 +60,7 @@ Item {
 
         group: blobGroup
         opacity: root.blobColour.a
-        radius: Tokens.rounding.medium
+        radius: Valorant.chamferPanels ? Valorant.chamferSmall : Tokens.rounding.medium
 
         implicitWidth: windowBtn.implicitWidth + (root.nState.isWindow ? Tokens.padding.extraSmall : Tokens.padding.small) * 2
         implicitHeight: windowBtn.implicitHeight + (root.nState.isWindow ? Tokens.padding.extraSmall : Tokens.padding.small)

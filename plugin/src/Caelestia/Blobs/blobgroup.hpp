@@ -14,6 +14,8 @@ class BlobGroup : public QObject {
     Q_PROPERTY(qreal smoothing READ smoothing WRITE setSmoothing NOTIFY smoothingChanged)
     Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY colorChanged)
     Q_PROPERTY(bool cornerFill READ cornerFill WRITE setCornerFill NOTIFY cornerFillChanged)
+    // Chamfer mode: corner radii become 45-degree bevels and blends become chamfers
+    Q_PROPERTY(bool chamfer READ chamfer WRITE setChamfer NOTIFY chamferChanged)
 
 public:
     explicit BlobGroup(QObject* parent = nullptr);
@@ -30,6 +32,13 @@ public:
     bool cornerFill() const { return m_cornerFill; }
 
     void setCornerFill(bool e);
+
+    bool chamfer() const { return m_chamfer; }
+
+    void setChamfer(bool c);
+
+    // A chamfer blend reaches further than a circular one (up to ~1.71x smoothing)
+    qreal blendReach() const { return m_chamfer ? m_smoothing * 1.75 : m_smoothing; }
 
     void addShape(BlobShape* shape);
     void removeShape(BlobShape* shape);
@@ -49,11 +58,13 @@ signals:
     void smoothingChanged();
     void colorChanged();
     void cornerFillChanged();
+    void chamferChanged();
 
 private:
     qreal m_smoothing = 32.0;
     QColor m_color{ 0x44, 0x88, 0xff };
     bool m_cornerFill = true;
+    bool m_chamfer = false;
     QList<BlobShape*> m_shapes;
     BlobInvertedRect* m_invertedRect = nullptr;
     bool m_physicsUpdated = false;

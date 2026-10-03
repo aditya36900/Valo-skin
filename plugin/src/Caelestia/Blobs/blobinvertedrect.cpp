@@ -48,7 +48,7 @@ QSGNode* BlobInvertedRect::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData
         return nullptr;
     }
 
-    const float pad = static_cast<float>(m_group->smoothing());
+    const float pad = static_cast<float>(m_group->blendReach());
 
     // Compute inner hole boundary in local coords
     // Inset past the inner border edge by 2x smoothing to cover the blend zone
@@ -114,7 +114,8 @@ QSGNode* BlobInvertedRect::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData
     material->m_paddedY = m_cachedPaddedY;
     material->m_paddedW = m_cachedPaddedW;
     material->m_paddedH = m_cachedPaddedH;
-    material->m_smoothFactor = pad;
+    material->m_smoothFactor = static_cast<float>(m_group->smoothing());
+    material->m_chamfer = m_group->chamfer() ? 1.0f : 0.0f;
     material->m_myIndex = m_cachedMyIndex;
     material->m_color = m_group->color();
     material->m_hasInverted = m_cachedHasInverted ? 1 : 0;

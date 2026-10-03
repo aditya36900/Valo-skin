@@ -1,0 +1,34 @@
+{
+    "enabled": true,
+    "agent": "valorant",
+    "mode": "dark",
+    "overrideScheme": true,
+    "accent": "",
+    "palette": {
+        "red": "#ff4655",
+        "navy": "#0f1923",
+        "white": "#ece8e1",
+        "teal": "#17d1a6",
+        "gold": "#e8c06a",
+        "black": "#0a0e12"
+    },
+    "shape": {
+        "chamfer": 10,
+        "cornerBrackets": true,
+        "accentBar": true,
+        "borderWidth": 1
+    },
+    "fx": {
+        "intensity": 1,
+        "glitch": true,
+        "scanlines": false
+    },
+    "hud": {
+        "roundTimerClock": true,
+        "abilitySlots": true,
+        "rankWorkspaces": true,
+        "killBanners": true,
+        "spikeLock": true,
+        "agentSelectLauncher": true
+    }
+}

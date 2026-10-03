@@ -25,6 +25,7 @@ ShellRoot {
     }
 
     GSFLoader {}
+    ValorantFonts {}
     ServiceLoader {}
 
     Background {}

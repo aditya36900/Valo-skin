@@ -61,7 +61,8 @@ int AppearanceRounding::extraExtraLarge() const {
 }
 
 int AppearanceRounding::full() const {
-    return m_tokens ? static_cast<int>(m_tokens->full()) : 0;
+    // Fully round only when rounding is enabled at all, so scale 0 gives sharp pills too
+    return m_tokens && m_scale > 0 ? static_cast<int>(m_tokens->full()) : 0;
 }
 
 // AppearanceSpacing
@@ -154,6 +155,11 @@ void FontConfig::setDefaults(int size, int weight, const QVariantMap& vaxes) {
 
 void FontStyleConfig::setDefaultFamily(const QString& family) {
     m_family = family;
+}
+
+void FontStyleConfig::setDefaultTracking(bool uppercase, qreal letterSpacing) {
+    m_uppercase = uppercase;
+    m_letterSpacing = letterSpacing;
 }
 
 // AnimDurations

@@ -68,6 +68,24 @@ class LauncherConfig : public ConfigObject {
                 { u"command"_s, QStringList{ u"autocomplete"_s, u"variant"_s } },
             }),
             vmap({
+                { u"name"_s, u"Next agent"_s },
+                { u"icon"_s, u"skip_next"_s },
+                { u"description"_s, u"Lock in the next Valorant agent theme"_s },
+                { u"command"_s, QStringList{ u"valorant"_s, u"next"_s } },
+            }),
+            vmap({
+                { u"name"_s, u"Previous agent"_s },
+                { u"icon"_s, u"skip_previous"_s },
+                { u"description"_s, u"Lock in the previous Valorant agent theme"_s },
+                { u"command"_s, QStringList{ u"valorant"_s, u"prev"_s } },
+            }),
+            vmap({
+                { u"name"_s, u"Valorant palette"_s },
+                { u"icon"_s, u"swap_horiz"_s },
+                { u"description"_s, u"Toggle between the Valorant palette and the wallpaper scheme"_s },
+                { u"command"_s, QStringList{ u"valorant"_s, u"toggle"_s } },
+            }),
+            vmap({
                 { u"name"_s, u"Random"_s },
                 { u"icon"_s, u"casino"_s },
                 { u"description"_s, u"Switch to a random wallpaper"_s },

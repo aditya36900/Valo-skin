@@ -5,6 +5,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Caelestia.Config
+import qs.services
 import qs.utils
 
 Searcher {
@@ -82,6 +83,9 @@ Searcher {
 
         function onClicked(list: AppList): void {
             list.screenState.launcher = false;
+            // Picking a wallpaper/CLI scheme explicitly hands colours back from the Valorant palette
+            if (Valorant.overrideScheme)
+                Valorant.set("overrideScheme", false);
             Quickshell.execDetached(["caelestia", "scheme", "set", "-n", name, "-f", flavour]);
         }
     }

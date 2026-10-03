@@ -117,7 +117,7 @@ CustomMouseArea {
 
                 StateLayer {
                     color: Colours.palette.m3primary
-                    radius: pressed ? Tokens.rounding.small : height / 2
+                    radius: pressed ? Tokens.rounding.small : height / 2 * Math.min(1, Tokens.rounding.scale)
                     disabled: {
                         const now = new Date();
                         return root.nonAnimCurrMonth === now.getMonth() && root.nonAnimCurrYear === now.getFullYear();

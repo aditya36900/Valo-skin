@@ -18,7 +18,8 @@ class AppearanceRounding : public ConfigObject {
     Q_OBJECT
     QML_ANONYMOUS
 
-    CONFIG_PROPERTY(qreal, scale, 1)
+    // Valorant: sharp corners by default. Set appearance.rounding.scale to 1 for upstream rounding.
+    CONFIG_PROPERTY(qreal, scale, 0)
 
     Q_PROPERTY(int extraSmall READ extraSmall NOTIFY valuesChanged)
     Q_PROPERTY(int small READ small NOTIFY valuesChanged)
@@ -149,7 +150,10 @@ class FontStyleConfig : public ConfigObject {
     Q_OBJECT
     QML_ANONYMOUS
 
-    CONFIG_PROPERTY(QString, family, QStringLiteral("GoogleSansFlex"))
+    CONFIG_PROPERTY(QString, family, QStringLiteral("Barlow"))
+    // Valorant-style tracking: render this style in capitals with extra letter spacing (px)
+    CONFIG_PROPERTY(bool, uppercase, false)
+    CONFIG_PROPERTY(qreal, letterSpacing, 0)
     CONFIG_SUBOBJECT(FontConfig, large)
     CONFIG_SUBOBJECT(FontConfig, medium)
     CONFIG_SUBOBJECT(FontConfig, small)
@@ -162,6 +166,7 @@ public:
         , m_small(new FontConfig(this)) {}
 
     void setDefaultFamily(const QString& family);
+    void setDefaultTracking(bool uppercase, qreal letterSpacing);
 };
 
 class IconFontStyleConfig : public FontStyleConfig {
@@ -187,9 +192,8 @@ class AppearanceFont : public ConfigObject {
     CONFIG_SUBOBJECT(FontStyleConfig, label)
     CONFIG_SUBOBJECT(FontStyleConfig, mono)
     CONFIG_SUBOBJECT(IconFontStyleConfig, icon)
-    CONFIG_PROPERTY(QString, clock, QStringLiteral("Rubik"))
-    // Google Sans Flex doesn't play well with unicode symbols apparently, so use Rubik instead
-    CONFIG_PROPERTY(QString, workspaces, QStringLiteral("Rubik"))
+    CONFIG_PROPERTY(QString, clock, QStringLiteral("Oswald"))
+    CONFIG_PROPERTY(QString, workspaces, QStringLiteral("Oswald"))
 
 public:
     explicit AppearanceFont(QObject* parent = nullptr)
@@ -200,17 +204,23 @@ public:
         , m_label(new FontStyleConfig(this))
         , m_mono(new FontStyleConfig(this))
         , m_icon(new IconFontStyleConfig(this)) {
-        const auto sans = QStringLiteral("GoogleSansFlex");
+        // Valorant type: condensed display faces for headings, DIN-style body. All bundled (OFL).
+        const auto display = QStringLiteral("Bebas Neue");
+        const auto condensed = QStringLiteral("Oswald");
+        const auto sans = QStringLiteral("Barlow");
         const auto mono = QStringLiteral("CaskaydiaCove NF");
-        const auto icons = QStringLiteral("Material Symbols Rounded");
-        const QVariantMap vaxes = { { "ROND", 25 } };
+        const auto icons = QStringLiteral("Material Symbols Sharp");
+        const QVariantMap vaxes = {};
 
-        m_headline->setDefaultFamily(sans);
+        m_headline->setDefaultFamily(display);
         m_headline->large()->setDefaults(32, QFont::Medium, vaxes);
         m_headline->medium()->setDefaults(28, QFont::Medium, vaxes);
         m_headline->small()->setDefaults(24, QFont::Medium, vaxes);
 
-        m_title->setDefaultFamily(sans);
+        m_headline->setDefaultTracking(true, 1);
+
+        m_title->setDefaultFamily(condensed);
+        m_title->setDefaultTracking(true, 1.5);
         m_title->large()->setDefaults(22, QFont::Medium, vaxes);
         m_title->medium()->setDefaults(16, QFont::Medium, vaxes);
         m_title->small()->setDefaults(14, QFont::Medium, vaxes);
@@ -221,6 +231,7 @@ public:
         m_body->small()->setDefaults(12, QFont::Normal, vaxes);
 
         m_label->setDefaultFamily(sans);
+        m_label->setDefaultTracking(true, 0.8);
         m_label->large()->setDefaults(14, QFont::Medium, vaxes);
         m_label->medium()->setDefaults(12, QFont::Medium, vaxes);
         m_label->small()->setDefaults(11, QFont::Normal, vaxes);

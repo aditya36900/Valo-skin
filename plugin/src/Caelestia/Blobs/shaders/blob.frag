@@ -16,6 +16,7 @@ layout(std140, binding = 0) uniform buf {
     vec4 color;
     int hasInverted;
     float invertedRadius;
+    float chamfer;
     vec4 invertedOuter;
     vec4 invertedInner;
     vec4 rectData[80];
@@ -33,6 +34,21 @@ float sdRoundedBox4(vec2 p, vec2 center, vec2 halfSize, vec4 r) {
     r.x  = (p.y > 0.0) ? r.y : r.x;
     vec2 q = abs(p) - halfSize + r.x;
     return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r.x;
+}
+
+float sdChamferBox(vec2 p, vec2 center, vec2 halfSize, float c) {
+    // Box with 45-degree bevels of leg length c at every corner
+    vec2 q = abs(p - center) - halfSize;
+    float box = length(max(q, vec2(0.0))) + min(max(q.x, q.y), 0.0);
+    return max(box, (q.x + q.y + c) * 0.70710678);
+}
+
+float sdChamferBox4(vec2 p, vec2 center, vec2 halfSize, vec4 r) {
+    // r = (topRight, bottomRight, bottomLeft, topLeft), interpreted as bevel leg lengths
+    p -= center;
+    r.xy = (p.x > 0.0) ? r.xy : r.wz;
+    r.x  = (p.y > 0.0) ? r.y : r.x;
+    return sdChamferBox(p, vec2(0.0), halfSize, r.x);
 }
 
 float sdBox(vec2 p, vec2 center, vec2 halfSize) {
@@ -54,6 +70,21 @@ float smin(float a, float b, float k) {
 float smax(float a, float b, float k) {
     // Circular smooth max — dual of smin: -smin(-a, -b, k). Always >= max(a, b).
     return min(-k, max(a, b)) + length(max(vec2(a, b) + vec2(k), vec2(0.0)));
+}
+
+float cmin(float a, float b, float k) {
+    // Chamfer union: joins two surfaces with a straight 45-degree bevel instead of an arc.
+    // Deviates from min(a, b) only while max(a, b) < ~1.71 * k.
+    return min(min(a, b), (a + b - k) * 0.70710678);
+}
+
+float cmax(float a, float b, float k) {
+    // Chamfer intersection, dual of cmin
+    return max(max(a, b), (a + b + k) * 0.70710678);
+}
+
+float blendMin(float a, float b, float k) {
+    return chamfer > 0.5 ? cmin(a, b, k) : smin(a, b, k);
 }
 
 float smaxSharpA(float a, float b, float k) {
@@ -84,7 +115,7 @@ void main() {
         vec2 center = rect.xy + props.yz;
 
         // AABB early-out: skip rects far from this pixel
-        vec2 extent = sh.xy + vec2(smoothFactor * 1.5);
+        vec2 extent = sh.xy + vec2(smoothFactor * (chamfer > 0.5 ? 1.75 : 1.5));
         if (abs(pixel.x - center.x) > extent.x || abs(pixel.y - center.y) > extent.y) {
             dArr[i] = 1e10;
             continue;
@@ -95,7 +126,8 @@ void main() {
         vec2 transformedPixel = center + invDeform * (pixel - center);
 
         // Use pre-computed effective per-corner radii
-        float d = sdRoundedBox4(transformedPixel, center, rect.zw, radii);
+        float d = chamfer > 0.5 ? sdChamferBox4(transformedPixel, center, rect.zw, radii)
+                                : sdRoundedBox4(transformedPixel, center, rect.zw, radii);
 
         // Use pre-computed minimum eigenvalue for SDF correction
         d *= max(props.w, 0.01);
@@ -158,6 +190,7 @@ void main() {
 
     // Phase 3: pair-wise smin contributions, skipping excluded pairs. Pair smin <= min,
     // so taking the min over all non-excluded pair smins gives the smoothly-merged SDF.
+    float blendCutoff = chamfer > 0.5 ? smoothFactor * 1.71 : smoothFactor;
     for (int i = 0; i < rectCount; i++) {
         if (dArr[i] >= 1e9)
             continue;
@@ -168,15 +201,16 @@ void main() {
             if ((excludeMask & (1 << j)) != 0)
                 continue;
             // Circular smin deviates from min only where BOTH dArr are < smoothFactor.
-            if (max(dArr[i], dArr[j]) >= smoothFactor)
+            if (max(dArr[i], dArr[j]) >= blendCutoff)
                 continue;
-            mergedSdf = min(mergedSdf, smin(dArr[i], dArr[j], smoothFactor));
+            mergedSdf = min(mergedSdf, blendMin(dArr[i], dArr[j], smoothFactor));
         }
     }
 
     if (hasInverted != 0) {
         float dOuter = sdBox(pixel, invertedOuter.xy, invertedOuter.zw) - 1.0;
-        float dInner = sdRoundedBox(pixel, invertedInner.xy, invertedInner.zw, invertedRadius);
+        float dInner = chamfer > 0.5 ? sdChamferBox(pixel, invertedInner.xy, invertedInner.zw, invertedRadius)
+                                     : sdRoundedBox(pixel, invertedInner.xy, invertedInner.zw, invertedRadius);
 
         // Border sinks: track the opposite rect edge, clamped to border thickness
         float innerTop = invertedInner.y - invertedInner.w;
@@ -248,9 +282,10 @@ void main() {
         float minThick = min(min(innerTop - outerTop, outerBot - innerBot),
                              min(innerLeft - outerLeft, outerRight - innerRight));
         float kFrame = clamp(min(smoothFactor, minThick - 1.0), 1.0, smoothFactor);
-        float dFrame = smaxSharpA(dOuter, -dInner, kFrame);
+        // Chamfer mode keeps the frame's outer edge hard; inner corners are already bevelled
+        float dFrame = chamfer > 0.5 ? max(dOuter, -dInner) : smaxSharpA(dOuter, -dInner, kFrame);
 
-        mergedSdf = smin(mergedSdf, dFrame, smoothFactor);
+        mergedSdf = blendMin(mergedSdf, dFrame, smoothFactor);
         if (dFrame < minDist) {
             owner = -1;
         }

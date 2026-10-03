@@ -39,6 +39,7 @@ StyledWindow {
     readonly property real sdfBorderOffset: 2 * fsTransitionProg // SDFs joins are not exact, so offset by 2px to ensure nothing shows
     readonly property real borderThickness: contentItem.Config.border.thickness * (1 - fsTransitionProg)
     readonly property real borderRounding: contentItem.Config.border.rounding * (1 - fsTransitionProg)
+    readonly property real panelRounding: Valorant.chamferPanels ? Valorant.chamfer : Tokens.rounding.extraLarge
     readonly property real shadowOpacity: 0.7 * (1 - fsTransitionProg)
     readonly property real borderLayoutThickness: hasFullscreen ? 0 : contentItem.Config.border.thickness
 
@@ -160,7 +161,8 @@ StyledWindow {
             id: blobGroup
 
             color: root.surfaceColour
-            smoothing: root.contentItem.Config.border.smoothing
+            smoothing: Math.max(1, root.contentItem.Config.border.smoothing)
+            chamfer: Valorant.chamferPanels
         }
 
         BlobInvertedRect {
@@ -343,7 +345,7 @@ StyledWindow {
         y: panel.y + root.borderThickness
         implicitWidth: panel.width
         implicitHeight: panel.height
-        radius: Tokens.rounding.extraLarge
+        radius: root.panelRounding
         deformScale: (deformAmount * Config.appearance.deformScale) / 10000
     }
 }

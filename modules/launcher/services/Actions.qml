@@ -41,6 +41,16 @@ Searcher {
 
             if (command[0] === "autocomplete" && command.length > 1) {
                 list.search.text = `${GlobalConfig.launcher.actionPrefix}${command[1]} `;
+            } else if (command[0] === "valorant" && command.length > 1) {
+                list.screenState.launcher = false;
+                if (command[1] === "next")
+                    Valorant.cycleAgent(1);
+                else if (command[1] === "prev")
+                    Valorant.cycleAgent(-1);
+                else if (command[1] === "toggle")
+                    Valorant.set("overrideScheme", !Valorant.overrideScheme);
+                else if (command[1] === "agent" && command.length > 2)
+                    Valorant.setAgent(command[2]);
             } else if (command[0] === "setMode" && command.length > 1) {
                 list.screenState.launcher = false;
                 Colours.setMode(command[1]);

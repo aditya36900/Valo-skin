@@ -31,7 +31,8 @@ Item {
         id: blobGroup
 
         color: Colours.palette.m3surfaceContainerHighest
-        smoothing: root.Tokens.rounding.medium
+        smoothing: Valorant.chamferPanels ? Valorant.chamferSmall : Math.max(1, root.Tokens.rounding.medium)
+        chamfer: Valorant.chamferPanels
         cornerFill: false
 
         Behavior on color {
@@ -45,7 +46,7 @@ Item {
         anchors.fill: parent
         anchors.margins: (!(btn.pressed || root.pressOverride) && (btn.containsMouse || root.hoverOverride) ? -Tokens.padding.extraSmall : 0) + (root.open ? -Tokens.padding.extraSmall : 0)
         group: blobGroup
-        radius: root.open ? Tokens.rounding.large : Tokens.rounding.medium
+        radius: Valorant.chamferPanels ? (root.open ? Valorant.chamfer : Valorant.chamferSmall) : root.open ? Tokens.rounding.large : Tokens.rounding.medium
 
         Behavior on anchors.margins {
             Anim {}
@@ -68,7 +69,7 @@ Item {
         implicitHeight: parent.height
 
         group: blobGroup
-        radius: Tokens.rounding.large
+        radius: Valorant.chamferPanels ? Valorant.chamfer : Tokens.rounding.large
         deformScale: 0.00001
 
         states: State {

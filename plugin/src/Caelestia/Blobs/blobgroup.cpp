@@ -36,6 +36,14 @@ void BlobGroup::setCornerFill(bool e) {
     markDirty();
 }
 
+void BlobGroup::setChamfer(bool c) {
+    if (m_chamfer == c)
+        return;
+    m_chamfer = c;
+    emit chamferChanged();
+    markDirty();
+}
+
 void BlobGroup::addShape(BlobShape* shape) {
     if (!shape || m_shapes.contains(shape))
         return;

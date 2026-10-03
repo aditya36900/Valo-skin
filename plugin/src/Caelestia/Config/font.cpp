@@ -66,6 +66,14 @@ void FontStyleBase::rebuild() {
         m_large = buildFont(m_cfg->large(), family, m_scale);
         m_medium = buildFont(m_cfg->medium(), family, m_scale);
         m_small = buildFont(m_cfg->small(), family, m_scale);
+
+        if (m_cfg->uppercase() || !qFuzzyIsNull(m_cfg->letterSpacing())) {
+            for (auto* font : { &m_large, &m_medium, &m_small }) {
+                if (m_cfg->uppercase())
+                    font->setCapitalization(QFont::AllUppercase);
+                font->setLetterSpacing(QFont::AbsoluteSpacing, m_cfg->letterSpacing());
+            }
+        }
     } else {
         m_large = QFont();
         m_medium = QFont();
