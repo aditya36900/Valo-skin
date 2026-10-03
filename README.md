@@ -39,7 +39,10 @@ switch at any time.
 | **Settings page**: agent grid plus every Valorant option and HUD toggle under Wallpaper & style | ✅ |
 | **Lock-in glitch**: switching agents plays a glitch flourish with an "Agent locked in" banner | ✅ |
 | **Scanlines**: optional scanline texture on panels, drawn in the panel shader | ✅ |
-| Hyprland, terminal, fastfetch, GTK/Qt, cursor themes and a one-shot installer | 🔜 Phase 4 |
+| **Whole-desktop agent sync**: Hyprland borders, kitty/foot/alacritty, fastfetch, GTK 3/4 and Qt recolour automatically on agent switch (`valo-sync`) | ✅ |
+| **Hyprland look**: sharp corners, rotating accent-gradient borders, hard shadows, snappy "valoSnap" animations, agent keybinds (Lua and hyprlang) | ✅ |
+| **Valo-Crosshair cursor theme**: original angular cursors and a Valorant-style crosshair, tinted per agent | ✅ |
+| **One-shot installer** for Arch and Fedora with backups, idempotent re-runs and `--uninstall` | ✅ |
 
 ## Previews
 
@@ -57,31 +60,46 @@ Chamfer-mode panel shader (navy = panels and screen frame):
 
 <img src="docs/previews/chamfer-panels.png" width="450">
 
+| fastfetch (illustrative system values) | Valo-Crosshair cursors |
+|---|---|
+| <img src="docs/previews/fastfetch.png" width="420"> | <img src="docs/previews/cursors.png" width="420"> |
+
 ## Install
 
-Valo-skin installs and builds the same way as Sidera/Caelestia. Only the clone URL changes.
+```sh
+git clone https://github.com/aditya36900/Valo-skin.git ~/Valo-skin
+cd ~/Valo-skin
+./install.sh            # --dry-run to preview, --help for options
+```
+
+The installer:
+
+1. installs packages (Arch: pacman plus `quickshell-git` from the AUR via paru/yay; Fedora: dnf);
+2. builds the shell into `~/.config/quickshell/caelestia`;
+3. installs `valo-sync`, the fonts and the Valo-Crosshair cursor;
+4. adds one tagged include line each to your Hyprland, kitty, foot and GTK configs (with backups).
+
+Flags: `--no-deps`, `--no-shell`, `--no-dots`, `--hypr=lua|conf`, `-y`, `--uninstall`.
+See [docs/DOTFILES.md](docs/DOTFILES.md) for exactly what changes.
+
+Then log into Hyprland, or start the shell with `qs -c caelestia`.
+
+<details><summary>Manual build (shell only)</summary>
 
 ```sh
-mkdir -p ~/.config/quickshell
-git clone https://github.com/aditya36900/Valo-skin.git ~/.config/quickshell/caelestia
-cd ~/.config/quickshell/caelestia
-
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/ \
       -DINSTALL_QSCONFDIR=~/.config/quickshell/caelestia
 cmake --build build
 sudo cmake --install build
-sudo chown -R $USER ~/.config/quickshell/caelestia
 ```
 
-Then start it with `qs -c caelestia` (or `caelestia shell -d` if you have
-[caelestia-cli](https://github.com/caelestia-dots/cli)).
-
 Requires the **git** version of Quickshell and Qt 6.9+. For the full dependency list see
-[docs/CAELESTIA.md](docs/CAELESTIA.md#manual-installation). Fedora users can use [FEDORA.md](FEDORA.md).
+[docs/CAELESTIA.md](docs/CAELESTIA.md#manual-installation), or [FEDORA.md](FEDORA.md) on Fedora.
+</details>
 
 > [!IMPORTANT]
-> The chamfered panels and the new font and rounding defaults live in the C++ plugin, so you must
-> **rebuild** after pulling updates. A QML-only reload won't pick them up.
+> The chamfered panels, scanlines and the new font and rounding defaults live in the C++ plugin,
+> so **rebuild** after pulling updates (re-running `./install.sh --no-dots` does this).
 
 ## Configuration
 

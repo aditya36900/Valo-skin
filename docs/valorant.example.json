@@ -3,6 +3,7 @@
     "agent": "valorant",
     "mode": "dark",
     "overrideScheme": true,
+    "syncDotfiles": true,
     "accent": "",
     "palette": {
         "red": "#ff4655",

@@ -182,6 +182,9 @@ Singleton {
     readonly property bool accentBar: cfg.shape?.accentBar ?? true
     readonly property int borderWidth: Math.max(0, cfg.shape?.borderWidth ?? 1)
 
+    // Regenerate terminal/Hyprland/GTK/Qt/cursor colours with valo-sync whenever the scheme changes
+    readonly property bool syncDotfiles: cfg.syncDotfiles ?? true
+
     readonly property real fxIntensity: Math.max(0, Math.min(2, cfg.fx?.intensity ?? 1))
     readonly property bool glitch: (cfg.fx?.glitch ?? true) && fxIntensity > 0
     readonly property bool scanlines: cfg.fx?.scanlines ?? false
@@ -205,6 +208,7 @@ Singleton {
             agent: "valorant",
             mode: "dark",
             overrideScheme: true,
+            syncDotfiles: true,
             accent: "",
             palette: {
                 red: "#ff4655",
@@ -402,7 +406,36 @@ Singleton {
         setAgent(agentIds[(i + dir + agentIds.length) % agentIds.length]);
     }
 
-    onCfgChanged: schemeInputsChanged()
+    onCfgChanged: {
+        schemeInputsChanged();
+        publishTimer.restart();
+    }
+
+    // Coalesce rapid changes (e.g. cycling agents) into one publish + sync
+    Timer {
+        id: publishTimer
+
+        interval: 400
+        onTriggered: {
+            if (!root.enabled)
+                return;
+            schemeFile.setText(JSON.stringify(Object.assign(root.scheme(), {
+                agentName: root.agentInfo.name,
+                role: root.agentInfo.role,
+                chamfer: root.chamfer
+            }), null, 2) + "\n");
+            if (root.syncDotfiles)
+                Quickshell.execDetached(["sh", "-c", "PATH=\"$PATH:$HOME/.local/bin\"; command -v valo-sync >/dev/null && exec valo-sync --quiet"]);
+        }
+    }
+
+    // Last generated scheme for external tools (valo-sync, scripts)
+    FileView {
+        id: schemeFile
+
+        path: `${Paths.state}/valorant-scheme.json`
+        printErrors: false
+    }
 
     FileView {
         id: file

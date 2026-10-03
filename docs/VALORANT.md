@@ -14,6 +14,7 @@ the shell log, so the defaults are used until you fix it.
 | `agent` | string | `"valorant"` | Agent theme id. See [agents](#agents). Unknown ids fall back to `valorant`. |
 | `mode` | `"dark"` \| `"light"` | `"dark"` | Navy background with off-white text, or the reverse. |
 | `overrideScheme` | bool | `true` | Use the generated Valorant palette instead of the wallpaper/CLI scheme (`~/.local/state/caelestia/scheme.json`). |
+| `syncDotfiles` | bool | `true` | Run `valo-sync` after every scheme change, so Hyprland, terminals, GTK, Qt and the cursor follow the agent. See [DOTFILES.md](DOTFILES.md). |
 | `accent` | `"#rrggbb"` \| `""` | `""` | Custom primary accent. Empty uses the agent's colour. |
 
 ## `palette`

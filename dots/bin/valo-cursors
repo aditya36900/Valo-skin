@@ -1,0 +1,271 @@
+#!/usr/bin/env python3
+"""valo-cursors: build the Valo-Crosshair XCursor theme (pure Python, no dependencies).
+
+Angular arrow pointers with a navy outline, a Valorant-style crosshair, and resize/move
+glyphs, tinted with the current agent accent (from valo-sync's cursor-accent file).
+
+Installs to ~/.local/share/icons/Valo-Crosshair. Usage: valo-cursors [--accent '#rrggbb'] [--quiet]
+"""
+
+import argparse
+import os
+import struct
+import sys
+from pathlib import Path
+
+HOME = Path.home()
+XDG_DATA = Path(os.environ.get("XDG_DATA_HOME") or HOME / ".local/share")
+THEME = "Valo-Crosshair"
+SIZES = (24, 32, 48, 64)
+SS = 4  # supersampling factor per axis
+
+WHITE = (0xEC, 0xE8, 0xE1)
+NAVY = (0x0F, 0x19, 0x23)
+RED = (0xFF, 0x46, 0x55)
+
+# ---------------------------------------------------------------- rasteriser
+
+
+def fill_polygon(mask, n, poly):
+    """Even-odd scanline fill of `poly` (design units 0-32) into an n*n supersampled mask.
+
+    Cells are toggled, so overlapping polygons in one layer cut holes (rings)."""
+    s = n / 32
+    pts = [(x * s, y * s) for x, y in poly]
+    edges = list(zip(pts, pts[1:] + pts[:1]))
+    for row in range(n):
+        y = row + 0.5
+        xs = []
+        for (x0, y0), (x1, y1) in edges:
+            if (y0 <= y < y1) or (y1 <= y < y0):
+                xs.append(x0 + (y - y0) * (x1 - x0) / (y1 - y0))
+        xs.sort()
+        base = row * n
+        for a, b in zip(xs[::2], xs[1::2]):
+            for col in range(max(0, int(a + 0.5)), min(n, int(b + 0.5))):
+                mask[base + col] ^= 1
+
+
+def dilate(mask, n, r):
+    """Square dilation by r cells (separable max filter): gives angular outlines."""
+    if r <= 0:
+        return mask[:]
+    tmp = [0] * (n * n)
+    for row in range(n):
+        base = row * n
+        line = mask[base:base + n]
+        for col in range(n):
+            lo, hi = max(0, col - r), min(n, col + r + 1)
+            tmp[base + col] = 1 if any(line[lo:hi]) else 0
+    out = [0] * (n * n)
+    for col in range(n):
+        column = tmp[col::n]
+        for row in range(n):
+            lo, hi = max(0, row - r), min(n, row + r + 1)
+            out[row * n + col] = 1 if any(column[lo:hi]) else 0
+    return out
+
+
+def render(layers, size, outline):
+    """layers: [(colour, [polygons])]; the union of all layers gets a navy outline."""
+    n = size * SS
+    body = [0] * (n * n)
+    masks = []
+    for colour, polys in layers:
+        m = [0] * (n * n)
+        for poly in polys:
+            fill_polygon(m, n, poly)
+        masks.append((colour, m))
+        body = [a | b for a, b in zip(body, m)]
+    r = max(1, round(outline * n / 32))
+    canvas = [(NAVY, dilate(body, n, r))] + masks
+
+    pixels = []
+    area = SS * SS
+    for py in range(size):
+        for px in range(size):
+            acc = [0.0, 0.0, 0.0, 0.0]  # premultiplied rgb + alpha
+            for colour, m in canvas:
+                cov = 0
+                for sy in range(SS):
+                    base = (py * SS + sy) * n + px * SS
+                    cov += sum(m[base:base + SS])
+                if not cov:
+                    continue
+                a = cov / area
+                for i in range(3):
+                    acc[i] = colour[i] * a + acc[i] * (1 - a)
+                acc[3] = a + acc[3] * (1 - a)
+            r_, g, b = (int(min(255, v + 0.5)) for v in acc[:3])
+            pixels.append((int(acc[3] * 255 + 0.5) << 24) | (r_ << 16) | (g << 8) | b)
+    return pixels
+
+
+# ---------------------------------------------------------------- xcursor file
+
+
+def xcursor(images):
+    """images: [(size, xhot, yhot, pixels)] -> XCursor file bytes."""
+    ntoc = len(images)
+    header = struct.pack("<4sIII", b"Xcur", 16, 0x10000, ntoc)
+    pos = 16 + ntoc * 12
+    toc, chunks = b"", b""
+    for size, xh, yh, px in images:
+        toc += struct.pack("<III", 0xFFFD0002, size, pos)
+        chunk = struct.pack("<IIIIIIIII", 36, 0xFFFD0002, size, 1, size, size, xh, yh, 0)
+        chunk += struct.pack(f"<{len(px)}I", *px)
+        chunks += chunk
+        pos += len(chunk)
+    return header + toc + chunks
+
+
+# ---------------------------------------------------------------- glyphs (32-unit design grid)
+
+ARROW = [(3, 2), (3, 25), (9, 19.5), (13, 28.5), (17, 26.5), (13.2, 17.8), (21, 17.8)]
+ARROW_STRIPE = [(5, 7), (5, 19), (8, 16), (8, 10)]
+
+
+def arrow(accent, stripe=True):
+    layers = [(WHITE, [ARROW])]
+    if stripe:
+        layers.append((accent, [ARROW_STRIPE]))
+    return layers, (3, 2)
+
+
+def pointer(accent):
+    layers = [(accent, [ARROW]), (WHITE, [ARROW_STRIPE])]
+    return layers, (3, 2)
+
+
+def crosshair(accent):
+    t, g, l = 1.4, 3.5, 7.5  # half thickness, centre gap, arm length
+    c = 16
+    arms = [
+        [(c - l - g, c - t), (c - g, c - t), (c - g, c + t), (c - l - g, c + t)],
+        [(c + g, c - t), (c + g + l, c - t), (c + g + l, c + t), (c + g, c + t)],
+        [(c - t, c - l - g), (c + t, c - l - g), (c + t, c - g), (c - t, c - g)],
+        [(c - t, c + g), (c + t, c + g), (c + t, c + g + l), (c - t, c + g + l)],
+    ]
+    dot = [(c - t, c - t), (c + t, c - t), (c + t, c + t), (c - t, c + t)]
+    return [(accent, arms + [dot])], (16, 16)
+
+
+def text(accent):
+    beam = [(15, 6), (17, 6), (17, 26), (15, 26)]
+    serifs = [[(11, 4), (21, 4), (21, 6), (11, 6)], [(11, 26), (21, 26), (21, 28), (11, 28)]]
+    return [(WHITE, [beam] + serifs), (accent, [[(15, 15), (17, 15), (17, 17), (15, 17)]])], (16, 16)
+
+
+def spike(accent):
+    # Waiting: the spike diamond
+    outer = [(16, 3), (29, 16), (16, 29), (3, 16)]
+    inner = [(16, 10), (22, 16), (16, 22), (10, 16)]
+    return [(accent, [outer]), (WHITE, [inner])], (16, 16)
+
+
+def progress(accent):
+    layers, hot = arrow(accent, stripe=False)
+    layers.append((accent, [[(23, 18), (29, 24), (23, 30), (17, 24)]]))
+    return layers, hot
+
+
+def not_allowed(accent):
+    # Chamfered octagon ring with a slash
+    o = [(10, 3), (22, 3), (29, 10), (29, 22), (22, 29), (10, 29), (3, 22), (3, 10)]
+    i = [(12, 7), (20, 7), (25, 12), (25, 20), (20, 25), (12, 25), (7, 20), (7, 12)]
+    slash = [(9, 21), (21, 9), (23, 11), (11, 23)]
+    return [(RED, [o, i]), (RED, [slash])], (16, 16)
+
+
+def double_arrow(angle_deg):
+    import math
+    # Vertical double arrow, rotated
+    shape = [(16, 3), (23, 10), (18.5, 10), (18.5, 22), (23, 22), (16, 29), (9, 22), (13.5, 22), (13.5, 10), (9, 10)]
+    a = math.radians(angle_deg)
+    ca, sa = math.cos(a), math.sin(a)
+    rot = [(16 + (x - 16) * ca - (y - 16) * sa, 16 + (x - 16) * sa + (y - 16) * ca) for x, y in shape]
+
+    def make(accent):
+        return [(WHITE, [rot])], (16, 16)
+    return make
+
+
+def move(accent):
+    v = [(16, 2), (21, 7), (17.3, 7), (17.3, 25), (21, 25), (16, 30), (11, 25), (14.7, 25), (14.7, 7), (11, 7)]
+    h = [(y, x) for x, y in v]
+    return [(WHITE, [v]), (WHITE, [h]), (accent, [[(14.5, 14.5), (17.5, 14.5), (17.5, 17.5), (14.5, 17.5)]])], (16, 16)
+
+
+CURSORS = {
+    "left_ptr": (lambda a: arrow(a), ["default", "arrow", "top_left_arrow", "left-arrow", "help", "question_arrow",
+                                      "context-menu", "copy", "alias", "dnd-copy", "dnd-link", "dnd-none"]),
+    "pointer": (pointer, ["hand1", "hand2", "pointing_hand", "9d800788f1b08800ae810202380a0822",
+                          "e29285e634086352946a0e7090d73106"]),
+    "crosshair": (crosshair, ["cross", "tcross", "cell", "plus", "color-picker", "diamond_cross", "cross_reverse"]),
+    "xterm": (text, ["text", "ibeam", "vertical-text"]),
+    "watch": (spike, ["wait"]),
+    "left_ptr_watch": (progress, ["progress", "half-busy", "00000000000000020006000e7e9ffc3f",
+                                  "08e8e1c95fe2fc01f976f1e063a24ccd"]),
+    "not-allowed": (not_allowed, ["crossed_circle", "forbidden", "no-drop", "circle", "pirate", "X_cursor"]),
+    "fleur": (move, ["move", "all-scroll", "grab", "grabbing", "openhand", "closedhand", "dnd-move", "size_all",
+                     "4498f0e0c1937ffe01fd06f973665830", "9081237383d90e509aa00f00170e968f"]),
+    "sb_v_double_arrow": (double_arrow(0), ["ns-resize", "n-resize", "s-resize", "row-resize", "top_side",
+                                             "bottom_side", "size_ver", "v_double_arrow", "split_v",
+                                             "00008160000006810000408080010102"]),
+    "sb_h_double_arrow": (double_arrow(90), ["ew-resize", "e-resize", "w-resize", "col-resize", "left_side",
+                                              "right_side", "size_hor", "h_double_arrow", "split_h",
+                                              "028006030e0e7ebffc7f7070c0600140"]),
+    "bd_double_arrow": (double_arrow(-45), ["nwse-resize", "nw-resize", "se-resize", "top_left_corner",
+                                             "bottom_right_corner", "size_fdiag", "c7088f0f3e6c8088236ef8e1e3e70000"]),
+    "fd_double_arrow": (double_arrow(45), ["nesw-resize", "ne-resize", "sw-resize", "top_right_corner",
+                                            "bottom_left_corner", "size_bdiag", "fcf1c3c7cd4491d801f1e1c78f100000"]),
+}
+
+
+def read_accent():
+    try:
+        return (XDG_DATA / "valo-skin" / "cursor-accent").read_text().strip()
+    except OSError:
+        return "ff4655"
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--accent", help="hex accent, default: current agent (from valo-sync)")
+    ap.add_argument("--out", type=Path, default=XDG_DATA / "icons" / THEME)
+    ap.add_argument("--quiet", action="store_true")
+    args = ap.parse_args()
+
+    acc = (args.accent or read_accent()).lstrip("#")
+    accent = tuple(int(acc[i:i + 2], 16) for i in (0, 2, 4))
+
+    cdir = args.out / "cursors"
+    cdir.mkdir(parents=True, exist_ok=True)
+    (args.out / "index.theme").write_text(
+        f"[Icon Theme]\nName={THEME}\nComment=Valo-skin angular cursors with a Valorant-style crosshair\n"
+        "Inherits=Adwaita\n")
+
+    for name, (glyph, aliases) in CURSORS.items():
+        images = []
+        for size in SIZES:
+            layers, (hx, hy) = glyph(accent)
+            px = render(layers, size, outline=1.2)
+            images.append((size, round(hx * size / 32), round(hy * size / 32), px))
+        target = cdir / name
+        tmp = target.with_suffix(".tmp")
+        tmp.write_bytes(xcursor(images))
+        tmp.replace(target)
+        for alias in aliases:
+            link = cdir / alias
+            if link.is_symlink() or link.exists():
+                link.unlink()
+            link.symlink_to(name)
+        if not args.quiet:
+            print(f"built {name} (+{len(aliases)} aliases)")
+    if not args.quiet:
+        print(f"{THEME} installed to {args.out}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

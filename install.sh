@@ -1,0 +1,357 @@
+#!/usr/bin/env bash
+# Valo-skin installer: shell + Valorant dotfiles for Arch and Fedora.
+#
+# Safe to re-run. Every file it changes is backed up first, and it never rewrites your own
+# configs: it only adds one tagged include line per app ("# valo-skin"), which --uninstall removes.
+set -Eeuo pipefail
+
+src="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly src
+readonly config_home="${XDG_CONFIG_HOME:-${HOME}/.config}"
+readonly data_home="${XDG_DATA_HOME:-${HOME}/.local/share}"
+readonly bin_dir="${HOME}/.local/bin"
+readonly qs_dir="${config_home}/quickshell/caelestia"
+backup_dir="${data_home}/valo-skin/backups/$(date +%Y%m%d-%H%M%S)"
+readonly backup_dir
+readonly tag="valo-skin"
+
+do_deps=1
+do_shell=1
+do_dots=1
+hypr_mode=auto
+assume_yes=0
+dry_run=0
+uninstall=0
+
+usage() {
+    cat <<'EOF'
+Usage: ./install.sh [options]
+
+Installs the Valo-skin shell and Valorant-themed dotfiles.
+
+  --no-deps          Don't install packages
+  --no-shell         Don't build/install the shell
+  --no-dots          Don't install Hyprland/terminal/GTK/Qt/cursor theming
+  --hypr=MODE        lua | conf | auto (default: detect hyprland.lua vs hyprland.conf)
+  -y, --yes          Don't ask for confirmation
+  --dry-run          Print what would happen without changing anything
+  --uninstall        Remove Valo-skin include lines, generated files and the cursor theme
+  -h, --help         Show this help
+
+Supported: Arch (and derivatives) and Fedora 44. Other distros: use --no-deps.
+EOF
+}
+
+for arg in "$@"; do
+    case "$arg" in
+        --no-deps) do_deps=0 ;;
+        --no-shell) do_shell=0 ;;
+        --no-dots) do_dots=0 ;;
+        --hypr=lua|--hypr=conf|--hypr=auto) hypr_mode="${arg#--hypr=}" ;;
+        -y|--yes) assume_yes=1 ;;
+        --dry-run) dry_run=1 ;;
+        --uninstall) uninstall=1 ;;
+        -h|--help) usage; exit 0 ;;
+        *) echo "Unknown option: ${arg}" >&2; usage >&2; exit 2 ;;
+    esac
+done
+
+# ------------------------------------------------------------------ helpers
+
+red=$'\e[38;2;255;70;85m'; dim=$'\e[2m'; bold=$'\e[1m'; off=$'\e[0m'
+say() { printf '%s▌%s %s\n' "$red" "$off" "$*"; }
+step() { printf '\n%s%s// %s%s\n' "$bold" "$red" "$*" "$off"; }
+note() { printf '  %s%s%s\n' "$dim" "$*" "$off"; }
+
+run() {
+    if (( dry_run )); then
+        printf '  %s[dry-run]%s %s\n' "$dim" "$off" "$*"
+    else
+        "$@"
+    fi
+}
+
+backup() {
+    local f="$1"
+    [[ -e "$f" || -L "$f" ]] || return 0
+    local dest="${backup_dir}${f#"${HOME}"}"
+    run mkdir -p "$(dirname -- "$dest")"
+    run cp -a -- "$f" "$dest"
+}
+
+# Append (or with ADD_LINE_PREPEND=1, prepend) "<line> <comment> valo-skin<suffix>" to a file,
+# unless an equivalent tagged line exists
+add_line() {
+    local file="$1" line="$2" comment="${3:-#}" suffix="${4:-}"
+    if [[ -f "$file" ]] && grep -qF -- "$tag" "$file" && grep -qF -- "$line" "$file"; then
+        note "already set up: ${file/#${HOME}/\~}"
+        return 0
+    fi
+    backup "$file"
+    run mkdir -p "$(dirname -- "$file")"
+    if (( dry_run )); then
+        note "would add to ${file}: ${line}"
+    else
+        local entry
+        entry="$(printf '%s %s %s%s' "$line" "$comment" "$tag" "$suffix")"
+        if [[ "${ADD_LINE_PREPEND:-0}" == 1 && -s "$file" ]]; then
+            printf '%s\n%s\n' "$entry" "$(cat -- "$file")" > "${file}.valo-tmp" && mv -- "${file}.valo-tmp" "$file"
+        else
+            printf '\n%s\n' "$entry" >> "$file"
+        fi
+    fi
+    say "linked ${file/#${HOME}/\~}"
+}
+
+remove_tagged() {
+    local file="$1"
+    [[ -f "$file" ]] && grep -qF -- "$tag" "$file" || return 0
+    backup "$file"
+    run sed -i -E "/ ${tag}( \\*\/)?\$/d" "$file"
+    if (( ! dry_run )) && ! grep -q '[^[:space:]]' "$file"; then
+        rm -f -- "$file" # only ever held our line
+    fi
+    say "cleaned ${file/#${HOME}/\~}"
+}
+
+# Set key=value inside an INI section (creates section/key if missing)
+ini_set() {
+    local file="$1" section="$2" key="$3" value="$4"
+    run python3 - "$file" "$section" "$key" "$value" <<'PY'
+import sys, re
+path, section, key, value = sys.argv[1:]
+try:
+    lines = open(path).read().splitlines()
+except FileNotFoundError:
+    lines = []
+out, in_sec, done, seen = [], False, False, False
+for ln in lines:
+    m = re.match(r"\s*\[(.+)\]\s*$", ln)
+    if m:
+        if in_sec and not done:
+            # Insert before the blank lines that separate sections
+            i = len(out)
+            while i > 0 and not out[i - 1].strip():
+                i -= 1
+            out.insert(i, f"{key}={value}"); done = True
+        in_sec = m.group(1) == section
+        seen = seen or in_sec
+    elif in_sec and re.match(rf"\s*{re.escape(key)}\s*=", ln):
+        ln = f"{key}={value}"; done = True
+    out.append(ln)
+if not seen:
+    out += ["", f"[{section}]"]
+    in_sec = True
+if not done:
+    out.append(f"{key}={value}")
+open(path, "w").write("\n".join(out).lstrip("\n") + "\n")
+PY
+}
+
+confirm() {
+    (( assume_yes || dry_run )) && return 0
+    read -r -p "$1 [Y/n] " reply
+    [[ -z "$reply" || "$reply" =~ ^[Yy] ]]
+}
+
+if [[ "${EUID}" -eq 0 && -z "${VALO_ALLOW_ROOT:-}" ]]; then
+    echo "Run as your normal user; the script uses sudo where needed." >&2
+    exit 1
+fi
+
+distro=unknown
+if [[ -r /etc/os-release ]]; then
+    # shellcheck disable=SC1091
+    source /etc/os-release
+    if [[ "${ID:-}" == arch || " ${ID_LIKE:-} " == *" arch "* ]]; then
+        distro=arch
+    elif [[ "${ID:-}" == fedora ]]; then
+        distro=fedora
+    fi
+fi
+
+printf '%s%s' "$red" "$bold"
+cat <<'EOF'
+ ╱━━━━               ━━━━╲
+┃     V A L O - S K I N     ┃
+ ╲━━━━               ━━━━╱
+EOF
+printf '%s' "$off"
+
+# ------------------------------------------------------------------ uninstall
+
+if (( uninstall )); then
+    step "Uninstalling Valo-skin theming"
+    for f in "${config_home}/hypr/hyprland.lua" "${config_home}/hypr/hyprland.conf" \
+             "${config_home}/kitty/kitty.conf" "${config_home}/foot/foot.ini" \
+             "${config_home}/gtk-3.0/gtk.css" "${config_home}/gtk-4.0/gtk.css"; do
+        remove_tagged "$f"
+    done
+    for f in hypr/valorant.lua hypr/valorant.conf hypr/valorant-colors.lua hypr/valorant-colors.conf \
+             kitty/valorant.conf foot/valorant.ini alacritty/valorant.toml fastfetch/valorant.jsonc \
+             gtk-3.0/valorant.css gtk-4.0/valorant.css qt5ct/colors/valorant.conf qt6ct/colors/valorant.conf; do
+        [[ -e "${config_home}/${f}" ]] && run rm -f -- "${config_home}/${f}"
+    done
+    if [[ "$(readlink "${config_home}/fastfetch/config.jsonc" 2>/dev/null)" == valorant.jsonc ]]; then
+        run rm -f -- "${config_home}/fastfetch/config.jsonc"
+    fi
+    if [[ -f "${config_home}/alacritty/alacritty.toml" ]] && [[ "$(grep -vc "$tag" "${config_home}/alacritty/alacritty.toml")" == 1 ]]; then
+        run rm -f -- "${config_home}/alacritty/alacritty.toml" # only contained our import
+    fi
+    if grep -qx "Inherits=Valo-Crosshair" "${HOME}/.icons/default/index.theme" 2>/dev/null; then
+        backup "${HOME}/.icons/default/index.theme"
+        run rm -f -- "${HOME}/.icons/default/index.theme"
+    fi
+    run rm -rf -- "${data_home}/icons/Valo-Crosshair"
+    for ct in qt5ct qt6ct; do
+        conf="${config_home}/${ct}/${ct}.conf"
+        if grep -q "colors/valorant.conf" "$conf" 2>/dev/null; then
+            backup "$conf"
+            run sed -i -e '/^color_scheme_path=.*colors\/valorant\.conf$/d' -e 's/^custom_palette=true$/custom_palette=false/' "$conf"
+            say "cleaned ${conf/#${HOME}/\~}"
+        fi
+    done
+    for d in alacritty fastfetch foot gtk-3.0 gtk-4.0 qt5ct/colors qt6ct/colors; do
+        [[ -d "${config_home}/${d}" ]] && run rmdir --ignore-fail-on-non-empty -- "${config_home}/${d}"
+    done
+    run rm -f -- "${bin_dir}/valo-sync" "${bin_dir}/valo-cursors"
+    say "Done. Backups of edited files: ${backup_dir/#${HOME}/\~}"
+    note "The shell itself is left installed at ${qs_dir/#${HOME}/\~}; remove it manually if you want."
+    exit 0
+fi
+
+say "Distro: ${distro}   Source: ${src/#${HOME}/\~}"
+confirm "Install Valo-skin?" || exit 0
+
+# ------------------------------------------------------------------ packages
+
+if (( do_deps )); then
+    step "Packages"
+    case "$distro" in
+        arch)
+            run sudo pacman -S --needed --noconfirm \
+                base-devel git cmake ninja python \
+                qt6-base qt6-declarative qt6-shadertools qt6-svg qt6-imageformats \
+                pipewire aubio libqalculate lm_sensors fftw ddcutil brightnessctl \
+                networkmanager swappy wl-clipboard grim slurp playerctl fish \
+                hyprland xdg-desktop-portal-hyprland \
+                kitty fastfetch qt5ct qt6ct ttf-cascadia-code-nerd
+            aur=""
+            for h in paru yay; do command -v "$h" >/dev/null && { aur="$h"; break; }; done
+            if [[ -n "$aur" ]]; then
+                run "$aur" -S --needed --noconfirm quickshell-git caelestia-cli
+            else
+                say "No AUR helper found: install quickshell-git (required) and caelestia-cli (optional) from the AUR."
+            fi
+            ;;
+        fedora)
+            note "Shell dependencies are installed by scripts/install-fedora.sh below."
+            run sudo dnf install -y python3 kitty fastfetch qt5ct qt6ct
+            ;;
+        *)
+            say "Unsupported distro for automatic packages; continuing (use --no-deps to silence)."
+            ;;
+    esac
+fi
+
+# ------------------------------------------------------------------ shell
+
+if (( do_shell )); then
+    step "Shell"
+    if [[ "$distro" == fedora ]]; then
+        # Builds into ~/.local and ~/.config/quickshell/caelestia (also installs its own build deps)
+        run bash "${src}/scripts/install-fedora.sh"
+    else
+        modules="extras;plugin;shell;m3shapes"
+        if [[ "$(realpath -m "$src")" == "$(realpath -m "$qs_dir")" ]]; then
+            modules="extras;plugin;m3shapes" # cloned in place: QML is already where Quickshell looks
+        fi
+        run cmake -S "$src" -B "${src}/build" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/ -DINSTALL_QSCONFDIR="$qs_dir" -DENABLE_MODULES="$modules"
+        run cmake --build "${src}/build"
+        run sudo cmake --install "${src}/build"
+        [[ -d "$qs_dir" ]] && run sudo chown -R "$USER" "$qs_dir"
+    fi
+fi
+
+# ------------------------------------------------------------------ dotfiles
+
+if (( do_dots )); then
+    step "Tools and fonts"
+    run mkdir -p "$bin_dir" "${data_home}/fonts/valo-skin"
+    run install -m 0755 "${src}/dots/bin/valo-sync" "${src}/dots/bin/valo-cursors" "$bin_dir/"
+    run cp -f "${src}"/assets/fonts/*.ttf "${data_home}/fonts/valo-skin/"
+    command -v fc-cache >/dev/null && run fc-cache -f "${data_home}/fonts/valo-skin"
+    [[ ":${PATH}:" == *":${bin_dir}:"* ]] || say "Add ${bin_dir} to PATH so the shell can run valo-sync."
+
+    step "Colours and cursor"
+    run python3 "${bin_dir}/valo-sync" || run python3 "${src}/dots/bin/valo-sync"
+    run python3 "${src}/dots/bin/valo-cursors"
+
+    step "Hyprland"
+    if [[ "$hypr_mode" == auto ]]; then
+        if [[ -f "${config_home}/hypr/hyprland.lua" ]]; then hypr_mode=lua
+        elif [[ -f "${config_home}/hypr/hyprland.conf" ]]; then hypr_mode=conf
+        else hypr_mode=lua
+        fi
+    fi
+    run mkdir -p "${config_home}/hypr"
+    if [[ "$hypr_mode" == lua ]]; then
+        run install -m 0644 "${src}/dots/hypr/valorant.lua" "${config_home}/hypr/valorant.lua"
+        if [[ -f "${config_home}/hypr/hyprland.lua" ]]; then
+            add_line "${config_home}/hypr/hyprland.lua" 'require("valorant")' "--"
+        else
+            say "No hyprland.lua yet: add  require(\"valorant\")  to it once you create one."
+        fi
+    else
+        run install -m 0644 "${src}/dots/hypr/valorant.conf" "${config_home}/hypr/valorant.conf"
+        add_line "${config_home}/hypr/hyprland.conf" "source = ~/.config/hypr/valorant.conf"
+    fi
+
+    step "Terminals"
+    add_line "${config_home}/kitty/kitty.conf" "include valorant.conf"
+    add_line "${config_home}/foot/foot.ini" "include=${config_home}/foot/valorant.ini"
+    if [[ ! -f "${config_home}/alacritty/alacritty.toml" ]]; then
+        run mkdir -p "${config_home}/alacritty"
+        (( dry_run )) || printf '[general]\nimport = ["%s/alacritty/valorant.toml"] # %s\n' "$config_home" "$tag" \
+            > "${config_home}/alacritty/alacritty.toml"
+        say "created alacritty.toml"
+    elif ! grep -qF valorant.toml "${config_home}/alacritty/alacritty.toml"; then
+        say "Alacritty: add \"${config_home}/alacritty/valorant.toml\" to [general] import in alacritty.toml"
+    fi
+    if [[ "$(readlink "${config_home}/fastfetch/config.jsonc" 2>/dev/null)" == valorant.jsonc ]]; then
+        note "already set up: fastfetch"
+    elif [[ ! -e "${config_home}/fastfetch/config.jsonc" ]]; then
+        run ln -s valorant.jsonc "${config_home}/fastfetch/config.jsonc"
+        say "fastfetch now uses the Valorant config"
+    else
+        note "fastfetch: you have a config already; try  fastfetch -c valorant"
+    fi
+
+    step "GTK and Qt"
+    # CSS only honours @import before any other rule, so these go at the top
+    ADD_LINE_PREPEND=1 add_line "${config_home}/gtk-3.0/gtk.css" "@import 'valorant.css';" "/*" " */"
+    ADD_LINE_PREPEND=1 add_line "${config_home}/gtk-4.0/gtk.css" "@import 'valorant.css';" "/*" " */"
+    for ct in qt5ct qt6ct; do
+        backup "${config_home}/${ct}/${ct}.conf"
+        run mkdir -p "${config_home}/${ct}"
+        ini_set "${config_home}/${ct}/${ct}.conf" Appearance custom_palette true
+        ini_set "${config_home}/${ct}/${ct}.conf" Appearance color_scheme_path "${config_home}/${ct}/colors/valorant.conf"
+    done
+    say "qt5ct/qt6ct use the Valorant palette"
+
+    if command -v gsettings >/dev/null; then
+        run gsettings set org.gnome.desktop.interface cursor-theme Valo-Crosshair 2>/dev/null || true
+        run gsettings set org.gnome.desktop.interface font-name "Barlow 11" 2>/dev/null || true
+    fi
+    backup "${HOME}/.icons/default/index.theme"
+    run mkdir -p "${HOME}/.icons/default"
+    (( dry_run )) || printf '[Icon Theme]\nInherits=Valo-Crosshair\n' > "${HOME}/.icons/default/index.theme"
+    say "cursor theme: Valo-Crosshair"
+fi
+
+step "Done"
+say "Start the shell with  qs -c caelestia  (or log into Hyprland)."
+say "Switch agents: launcher \">agent\", Settings → Wallpaper & style, or SUPER+ALT+←/→."
+[[ -d "$backup_dir" ]] && say "Backups of edited files: ${backup_dir/#${HOME}/\~}"
+exit 0

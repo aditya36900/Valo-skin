@@ -1,0 +1,374 @@
+#!/usr/bin/env python3
+"""valo-sync: apply the current Valo-skin agent colours to the rest of the desktop.
+
+Reads the scheme the shell publishes to ~/.local/state/caelestia/valorant-scheme.json
+(falls back to computing the default Valorant scheme) and writes colour files for:
+
+  Hyprland (Lua + hyprlang), kitty, foot, alacritty, fastfetch, GTK 3/4, qt5ct/qt6ct
+  and the Valo-Crosshair cursor theme accent.
+
+Each target only gets a small *include* file; your own configs are never rewritten
+(install.sh adds the one include line per app). Files are only touched when their
+content changes, and apps are only reloaded when something changed.
+
+Usage: valo-sync [--quiet] [--dry-run] [--accent '#rrggbb'] [--light] [--only kitty,hypr,...]
+"""
+
+import argparse
+import colorsys
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = Path.home()
+XDG_CONFIG = Path(os.environ.get("XDG_CONFIG_HOME") or HOME / ".config")
+XDG_STATE = Path(os.environ.get("XDG_STATE_HOME") or HOME / ".local/state")
+XDG_DATA = Path(os.environ.get("XDG_DATA_HOME") or HOME / ".local/share")
+SCHEME_FILE = XDG_STATE / "caelestia" / "valorant-scheme.json"
+SHARE_DIR = XDG_DATA / "valo-skin"
+
+TARGETS = ["hypr", "kitty", "foot", "alacritty", "fastfetch", "gtk", "qt", "cursor"]
+
+# ---------------------------------------------------------------- colour maths
+
+
+def parse(c: str):
+    c = c.lstrip("#")
+    return tuple(int(c[i:i + 2], 16) / 255 for i in (0, 2, 4))
+
+
+def to_hex(rgb) -> str:
+    # Match the shell: QColor keeps 16-bit channels, then QML rounds half up to 8 bits
+    def q(v):
+        v16 = int(max(0.0, min(1.0, v)) * 65535 + 0.5 + 1e-7)
+        return int(v16 / 65535 * 255 + 0.5)
+
+    return "".join(f"{q(v):02x}" for v in rgb)
+
+
+def mix(a, b, t):
+    return tuple(x + (y - x) * t for x, y in zip(a, b))
+
+
+def lighter(c, f):
+    # Same semantics as QColor::lighter (HSV value scale, desaturate on overflow)
+    h, s, v = colorsys.rgb_to_hsv(*c)
+    v *= f
+    if v > 1:
+        s = max(0.0, s - (v - 1))
+        v = 1.0
+    return colorsys.hsv_to_rgb(h, s, v)
+
+
+def builtin_scheme(accent="#ff4655", light=False):
+    """Python port of Valorant.scheme() for when the shell hasn't published one yet."""
+    red, navy, white = parse("#ff4655"), parse("#0f1923"), parse("#ece8e1")
+    teal, gold = parse("#17d1a6"), parse("#e8c06a")
+    bg, fg = (white, navy) if light else (navy, white)
+    a = parse(accent)
+    b = fg if to_hex(a) == to_hex(red) else red
+
+    def step(t):
+        return mix(bg, fg, t)
+
+    def on(c):
+        return navy if 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2] > 0.45 else white
+
+    c = {
+        "background": bg, "surface": bg, "onSurface": fg, "onBackground": fg,
+        "surfaceContainerLow": step(0.04), "surfaceContainer": step(0.07),
+        "surfaceContainerHigh": step(0.11), "surfaceContainerHighest": step(0.15),
+        "surfaceVariant": step(0.18), "onSurfaceVariant": step(0.72),
+        "outline": step(0.42), "outlineVariant": step(0.22),
+        "primary": a, "onPrimary": on(a), "primaryContainer": mix(bg, a, 0.32),
+        "onPrimaryContainer": mix(a, navy, 0.6) if light else mix(a, white, 0.7),
+        "secondary": b, "onSecondary": on(b), "secondaryContainer": mix(bg, b, 0.25),
+        "tertiary": gold, "onTertiary": on(gold),
+        "error": parse("#d6283a") if light else parse("#ff5c6c"),
+        "errorContainer": mix(bg, red, 0.35), "success": teal,
+        "term0": mix(white, navy, 0.85) if light else mix(navy, white, 0.12),
+        "term1": red, "term2": teal, "term3": gold, "term4": parse("#4a8dff"),
+        "term5": parse("#b44dff"), "term6": parse("#3fe0c5"), "term7": navy if light else white,
+        "term8": step(0.4), "term9": lighter(red, 1.15), "term10": lighter(teal, 1.2),
+        "term11": lighter(gold, 1.15), "term12": parse("#7fb0ff"), "term13": parse("#cf8aff"),
+        "term14": parse("#8af0dc"), "term15": parse("#ffffff"),
+    }
+    return {
+        "name": "valorant", "flavour": "custom", "agentName": "Valorant", "role": "",
+        "mode": "light" if light else "dark", "chamfer": 10,
+        "colours": {k: to_hex(v) for k, v in c.items()},
+    }
+
+
+def load_scheme(args):
+    if args.accent:
+        return builtin_scheme(args.accent, args.light)
+    try:
+        data = json.loads(SCHEME_FILE.read_text())
+        if "colours" in data:
+            return data
+    except (OSError, ValueError):
+        pass
+    return builtin_scheme(light=args.light)
+
+
+# ---------------------------------------------------------------- renderers
+
+
+class Palette:
+    def __init__(self, scheme):
+        self.s = scheme
+        self.c = scheme["colours"]
+        self.light = scheme.get("mode") == "light"
+
+    def __getattr__(self, k):
+        return self.c[k]
+
+    def h(self, k):
+        return "#" + self.c[k]
+
+    def term(self, i):
+        return self.c[f"term{i}"]
+
+    def ansi(self, k):
+        r, g, b = (round(v * 255) for v in parse(self.c[k]))
+        return f"38;2;{r};{g};{b}"
+
+
+HEADER = "Generated by valo-sync for agent {agent}. Do not edit: changes are overwritten."
+
+
+def header(p, comment="#"):
+    return f"{comment} {HEADER.format(agent=p.s.get('agentName', p.s.get('flavour', '?')))}\n"
+
+
+def render_hypr(p):
+    lua = header(p, "--") + f"""return {{
+    accent = "{p.primary}",
+    red = "{p.term1}",
+    background = "{p.background}",
+    surface = "{p.surfaceContainer}",
+    outline = "{p.outlineVariant}",
+    active_border = {{ colors = {{ "rgba({p.primary}ff)", "rgba({p.term1}ff)" }}, angle = 45 }},
+    inactive_border = "rgba({p.outlineVariant}cc)",
+    group_active = "rgba({p.primary}ff)",
+    group_inactive = "rgba({p.surfaceContainerHigh}ff)",
+    shadow = "rgba({p.background}cc)",
+}}
+"""
+    conf = header(p) + f"""$valoAccent = rgba({p.primary}ff)
+$valoRed = rgba({p.term1}ff)
+$valoBackground = rgba({p.background}ff)
+$valoSurface = rgba({p.surfaceContainer}ff)
+$valoOutline = rgba({p.outlineVariant}cc)
+$valoShadow = rgba({p.background}cc)
+"""
+    return {XDG_CONFIG / "hypr/valorant-colors.lua": lua, XDG_CONFIG / "hypr/valorant-colors.conf": conf}
+
+
+def render_kitty(p):
+    lines = [header(p).rstrip(),
+             f"foreground {p.h('onSurface')}", f"background {p.h('background')}",
+             f"selection_foreground {p.h('onPrimaryContainer')}", f"selection_background {p.h('primaryContainer')}",
+             f"cursor {p.h('primary')}", f"cursor_text_color {p.h('background')}",
+             f"url_color {p.h('primary')}",
+             f"active_border_color {p.h('primary')}", f"inactive_border_color {p.h('outlineVariant')}",
+             f"bell_border_color {p.h('term1')}",
+             f"active_tab_foreground {p.h('onPrimary')}", f"active_tab_background {p.h('primary')}",
+             f"inactive_tab_foreground {p.h('onSurfaceVariant')}", f"inactive_tab_background {p.h('surfaceContainer')}",
+             f"tab_bar_background {p.h('background')}",
+             f"mark1_background {p.h('primary')}", f"mark2_background {p.h('term1')}", f"mark3_background {p.h('tertiary')}"]
+    lines += [f"color{i} #{p.term(i)}" for i in range(16)]
+    return {XDG_CONFIG / "kitty/valorant.conf": "\n".join(lines) + "\n"}
+
+
+def render_foot(p):
+    names = ["regular", "bright"]
+    lines = [header(p).rstrip(), "[colors]", f"foreground={p.onSurface}", f"background={p.background}",
+             f"selection-foreground={p.onPrimaryContainer}", f"selection-background={p.primaryContainer}",
+             f"cursor={p.background} {p.primary}", f"urls={p.primary}"]
+    for n, base in zip(names, (0, 8)):
+        lines += [f"{n}{i}={p.term(base + i)}" for i in range(8)]
+    return {XDG_CONFIG / "foot/valorant.ini": "\n".join(lines) + "\n"}
+
+
+def render_alacritty(p):
+    keys = ["black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"]
+    out = [header(p).rstrip(),
+           "[colors.primary]", f'background = "{p.h("background")}"', f'foreground = "{p.h("onSurface")}"', "",
+           "[colors.cursor]", f'text = "{p.h("background")}"', f'cursor = "{p.h("primary")}"', "",
+           "[colors.selection]", f'text = "{p.h("onPrimaryContainer")}"', f'background = "{p.h("primaryContainer")}"', ""]
+    for sec, base in (("normal", 0), ("bright", 8)):
+        out.append(f"[colors.{sec}]")
+        out += [f'{k} = "#{p.term(base + i)}"' for i, k in enumerate(keys)]
+        out.append("")
+    return {XDG_CONFIG / "alacritty/valorant.toml": "\n".join(out)}
+
+
+FASTFETCH_LOGO = """$1 ╱━━━━               ━━━━╲
+$1┃                         ┃
+$1┃            $2┃$1            ┃
+$1┃            $2┃$1            ┃
+$1┃    $2━━━━━   ■   ━━━━━$1    ┃
+$1┃            $2┃$1            ┃
+$1┃            $2┃$1            ┃
+$1┃                         ┃
+$1 ╲━━━━               ━━━━╱
+"""
+
+
+def render_fastfetch(p):
+    logo = SHARE_DIR / "fastfetch-logo.txt"
+    cfg = {
+        "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+        "logo": {"type": "file", "source": str(logo), "color": {"1": p.ansi("onSurface"), "2": p.ansi("primary")},
+                 "padding": {"top": 1, "right": 3}},
+        "display": {"separator": "  ", "color": {"keys": p.ansi("primary"), "title": p.ansi("term1")},
+                    "key": {"width": 12}},
+        "modules": [
+            {"type": "title", "format": "{user-name}  //  {host-name}"},
+            {"type": "custom", "format": f"\u001b[{p.ansi('outline')}m" + "─" * 34},
+            {"type": "custom", "key": "AGENT", "format": f"{p.s.get('agentName', 'Valorant').upper()}  {p.s.get('role', '').upper()}"},
+            {"type": "os", "key": "OS"},
+            {"type": "kernel", "key": "KERNEL"},
+            {"type": "wm", "key": "WM"},
+            {"type": "uptime", "key": "MATCH TIME"},
+            {"type": "packages", "key": "LOADOUT"},
+            {"type": "cpu", "key": "CPU"},
+            {"type": "gpu", "key": "GPU"},
+            {"type": "memory", "key": "MEMORY"},
+            {"type": "terminal", "key": "TERMINAL"},
+            "break",
+            {"type": "colors", "symbol": "block"},
+        ],
+    }
+    return {
+        logo: FASTFETCH_LOGO,
+        XDG_CONFIG / "fastfetch/valorant.jsonc": "// " + HEADER.format(agent=p.s.get("agentName", "?")) + "\n"
+        + json.dumps(cfg, indent=2) + "\n",
+    }
+
+
+def render_gtk(p):
+    css = header(p, "/*").rstrip() + " */\n" + "\n".join(f"@define-color {k} {v};" for k, v in [
+        ("accent_color", p.h("primary")), ("accent_bg_color", p.h("primary")), ("accent_fg_color", p.h("onPrimary")),
+        ("destructive_color", p.h("error")), ("destructive_bg_color", p.h("errorContainer")),
+        ("destructive_fg_color", p.h("onSurface")),
+        ("success_color", p.h("success")), ("warning_color", p.h("tertiary")), ("error_color", p.h("error")),
+        ("window_bg_color", p.h("background")), ("window_fg_color", p.h("onSurface")),
+        ("view_bg_color", p.h("surfaceContainerLow")), ("view_fg_color", p.h("onSurface")),
+        ("headerbar_bg_color", p.h("surfaceContainer")), ("headerbar_fg_color", p.h("onSurface")),
+        ("headerbar_backdrop_color", p.h("background")),
+        ("sidebar_bg_color", p.h("surfaceContainer")), ("sidebar_fg_color", p.h("onSurface")),
+        ("secondary_sidebar_bg_color", p.h("surfaceContainerLow")),
+        ("card_bg_color", p.h("surfaceContainer")), ("card_fg_color", p.h("onSurface")),
+        ("dialog_bg_color", p.h("surfaceContainerHigh")), ("dialog_fg_color", p.h("onSurface")),
+        ("popover_bg_color", p.h("surfaceContainerHigh")), ("popover_fg_color", p.h("onSurface")),
+        ("thumbnail_bg_color", p.h("surfaceContainerHigh")), ("borders", p.h("outlineVariant")),
+    ]) + "\n\n/* Sharp HUD corners */\nwindow, .background, button, entry, popover contents, .card { border-radius: 0; }\n"
+    return {XDG_CONFIG / "gtk-3.0/valorant.css": css, XDG_CONFIG / "gtk-4.0/valorant.css": css}
+
+
+def render_qt(p):
+    # QPalette role order used by qt5ct/qt6ct colour schemes
+    roles = [p.onSurface, p.surfaceContainerHigh, p.surfaceContainerHighest, p.surfaceContainerHigh, p.background,
+             p.surfaceContainer, p.onSurface, p.term15, p.onSurface, p.surfaceContainerLow, p.background, "000000",
+             p.primary, p.onPrimary, p.primary, p.term5, p.surfaceContainer, "000000", p.surfaceContainerHighest,
+             p.onSurface, p.outline]
+    active = ", ".join(f"#ff{c}" for c in roles)
+    dim = list(roles)
+    for i in (0, 6, 8):
+        dim[i] = p.outline
+    disabled = ", ".join(f"#ff{c}" for c in dim)
+    body = f"{header(p)}[ColorScheme]\nactive_colors={active}\ninactive_colors={active}\ndisabled_colors={disabled}\n"
+    return {XDG_CONFIG / "qt5ct/colors/valorant.conf": body, XDG_CONFIG / "qt6ct/colors/valorant.conf": body}
+
+
+def render_cursor(p):
+    # Picked up by install.sh / valo-cursors to tint the Valo-Crosshair theme
+    return {SHARE_DIR / "cursor-accent": p.primary + "\n"}
+
+
+RENDERERS = {
+    "hypr": render_hypr, "kitty": render_kitty, "foot": render_foot, "alacritty": render_alacritty,
+    "fastfetch": render_fastfetch, "gtk": render_gtk, "qt": render_qt, "cursor": render_cursor,
+}
+
+# ---------------------------------------------------------------- reloads
+
+
+def run(cmd):
+    try:
+        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10, check=False)
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+
+def reload(changed):
+    if "hypr" in changed and shutil.which("hyprctl") and os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        run(["hyprctl", "reload"])
+    if "kitty" in changed and shutil.which("pkill"):
+        run(["pkill", "-USR1", "-x", "kitty"])  # kitty reloads its config on SIGUSR1
+    if "foot" in changed and shutil.which("pkill"):
+        run(["pkill", "-USR1", "-x", "foot"])  # foot >= 1.15 switches/reloads colours on SIGUSR1
+    if "cursor" in changed:
+        gen = Path(__file__).with_name("valo-cursors")
+        if gen.exists():
+            run([sys.executable, str(gen), "--quiet"])
+
+
+# ---------------------------------------------------------------- main
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--quiet", action="store_true")
+    ap.add_argument("--dry-run", action="store_true", help="print what would change")
+    ap.add_argument("--accent", help="ignore the shell and use this accent")
+    ap.add_argument("--light", action="store_true", help="with --accent or no published scheme: light mode")
+    ap.add_argument("--only", help="comma-separated targets: " + ",".join(TARGETS))
+    ap.add_argument("--print", action="store_true", help="print the scheme JSON and exit")
+    args = ap.parse_args()
+
+    scheme = load_scheme(args)
+    if args.print:
+        print(json.dumps(scheme, indent=2))
+        return 0
+
+    p = Palette(scheme)
+    wanted = args.only.split(",") if args.only else TARGETS
+    changed = set()
+    for name in wanted:
+        if name not in RENDERERS:
+            print(f"valo-sync: unknown target {name!r}", file=sys.stderr)
+            return 2
+        for path, content in RENDERERS[name](p).items():
+            try:
+                if path.read_text() == content:
+                    continue
+            except OSError:
+                pass
+            changed.add(name)
+            if args.dry_run:
+                print(f"would write {path}")
+                continue
+            path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = path.with_suffix(path.suffix + ".tmp")
+            tmp.write_text(content)
+            tmp.replace(path)
+            if not args.quiet:
+                print(f"wrote {path}")
+
+    if not args.dry_run:
+        reload(changed)
+    if not args.quiet:
+        agent = scheme.get("agentName", scheme.get("flavour"))
+        print(f"valo-sync: {agent} applied ({', '.join(sorted(changed)) or 'nothing changed'})")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
