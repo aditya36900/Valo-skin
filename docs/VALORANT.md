@@ -17,6 +17,7 @@ the shell log, so the defaults are used until you fix it.
 | `syncDotfiles` | bool | `true` | Run `valo-sync` after every scheme change, so Hyprland, terminals, GTK, Qt and the cursor follow the agent. See [DOTFILES.md](DOTFILES.md). |
 | `accent` | `"#rrggbb"` \| `""` | `""` | Custom primary accent. Empty uses the agent's colour. |
 | `agentWallpapers` | bool | `true` | On lock-in, switch to the agent's bundled wallpaper (`assets/wallpapers/agents/<id>.webp`). |
+| `agentArt` | bool | `true` | Show the current agent's portrait (and name art) over the wallpaper. Needs the art downloaded once with `valo-agent-art` (or `./install.sh --agent-art`); Valo-skin doesn't ship Riot artwork. |
 | `layouts` | string[] | `["dwindle", "master", "scrolling"]` | Hyprland layouts that `SUPER+ALT+T` and the bar's layout button cycle through. Ones your Hyprland doesn't support are skipped. |
 
 ## `player`

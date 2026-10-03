@@ -22,6 +22,7 @@ do_sddm=0
 do_firefox=0
 do_dev=0
 do_plymouth=0
+do_agent_art=0
 hypr_mode=auto
 assume_yes=0
 dry_run=0
@@ -42,6 +43,8 @@ Installs the Valo-skin shell and Valorant-themed dotfiles.
   --firefox          Also theme Firefox/LibreWolf profiles with userChrome.css
   --dev              Also run the coding-tools installer (scripts/dev-tools.sh; --help there for modules)
   --plymouth         Also install and enable the Valo-skin Plymouth boot splash (root)
+  --agent-art        Download agent portraits for the wallpapers and login screen (valo-agent-art;
+                     Riot artwork fetched from valorant-api.com for personal use, not shipped here)
   --hypr=MODE        lua | conf | auto (default: detect hyprland.lua vs hyprland.conf)
   --player=NAME      Your name for the lock screen, dashboard, welcome banner, login screen
                      and boot splash (saved to valorant.json; default: your account's full name)
@@ -63,6 +66,7 @@ for arg in "$@"; do
         --firefox) do_firefox=1 ;;
         --dev) do_dev=1 ;;
         --plymouth) do_plymouth=1 ;;
+        --agent-art) do_agent_art=1 ;;
         --hypr=lua|--hypr=conf|--hypr=auto) hypr_mode="${arg#--hypr=}" ;;
         --player=*) player_name="${arg#--player=}" ;;
         -y|--yes) assume_yes=1 ;;
@@ -286,7 +290,8 @@ PY
         run sudo rm -rf /usr/share/plymouth/themes/valo-skin
         say "Plymouth theme reset to ${prev} (rebuild your initramfs to apply)"
     fi
-    run rm -f -- "${bin_dir}/valo-sync" "${bin_dir}/valo-cursors"
+    run rm -f -- "${bin_dir}/valo-sync" "${bin_dir}/valo-cursors" "${bin_dir}/valo-agent-art"
+    [[ -d "${data_home}/valo-skin/agent-art" ]] && note "Downloaded agent art kept in ${data_home/#${HOME}/\~}/valo-skin/agent-art (valo-agent-art --remove deletes it)"
     say "Done. Backups of edited files: ${backup_dir/#${HOME}/\~}"
     note "The shell itself is left installed at ${qs_dir/#${HOME}/\~}; remove it manually if you want."
     exit 0
@@ -351,7 +356,7 @@ fi
 if (( do_dots )); then
     step "Tools and fonts"
     run mkdir -p "$bin_dir" "${data_home}/fonts/valo-skin"
-    run install -m 0755 "${src}/dots/bin/valo-sync" "${src}/dots/bin/valo-cursors" "$bin_dir/"
+    run install -m 0755 "${src}/dots/bin/valo-sync" "${src}/dots/bin/valo-cursors" "${src}/dots/bin/valo-agent-art" "$bin_dir/"
     run cp -f "${src}"/assets/fonts/*.ttf "${data_home}/fonts/valo-skin/"
     command -v fc-cache >/dev/null && run fc-cache -f "${data_home}/fonts/valo-skin"
     [[ ":${PATH}:" == *":${bin_dir}:"* ]] || say "Add ${bin_dir} to PATH so the shell can run valo-sync."
@@ -537,6 +542,11 @@ except Exception:
 PY
 }
 
+if (( do_agent_art )); then
+    step "Agent art"
+    run python3 "${src}/dots/bin/valo-agent-art" || say "Couldn't download agent art (offline?); run valo-agent-art later"
+fi
+
 if [[ -n "$player_name" ]]; then
     step "Player"
     player_save "$player_name"
@@ -566,6 +576,11 @@ if (( do_sddm )); then
     wall="${src}/assets/wallpapers/agents/${agent}.webp"
     [[ -f "$wall" ]] || wall="${src}/assets/wallpaper.webp"
     run sudo cp "$wall" "${theme}/assets/background.webp"
+    art="${data_home}/valo-skin/agent-art/${agent}.png"
+    if [[ -f "$art" ]]; then
+        run sudo cp "$art" "${theme}/assets/agent.png"
+        run sudo sed -i "s|^agentArt=.*|agentArt=assets/agent.png|" "${theme}/theme.conf"
+    fi
     run sudo sed -i -e "s|^accent=.*|accent=$(scheme_get accent '#ff4655')|" \
         -e "s|^agentName=.*|agentName=$(scheme_get name Valorant)|" "${theme}/theme.conf"
     if [[ -n "$player" ]]; then

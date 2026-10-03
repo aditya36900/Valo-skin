@@ -13,7 +13,8 @@ switch at any time.
 
 > [!NOTE]
 > Valo-skin is a fan project. It is not affiliated with, endorsed by, or sponsored by Riot Games.
-> No Riot Games assets ship in this repo. The logo, wallpaper and palette are original, and the fonts
+> No Riot Games assets ship in this repo (`valo-agent-art` can download agent portraits to your own
+> machine from the community valorant-api.com, under Riot's fan-content policy). The logo, wallpaper and palette are original, and the fonts
 > are free (SIL OFL) lookalikes. Valorant is a trademark of Riot Games, Inc.
 
 ## Features
@@ -53,6 +54,7 @@ switch at any time.
 | **Comms Wi-Fi panel**: every network in range in a scrollable list with All / Saved / Open / Locked filters, signal pips, band tags | ✅ |
 | **Bench**: minimize windows (`SUPER+ALT+M` or their own button) and call them back from the bar | ✅ |
 | **Auto-tiling + layout switch** (`SUPER+ALT+T`): dwindle / master / scrolling, shown in the bar | ✅ |
+| **Agent portraits** on the wallpaper and login screen, downloaded on your machine with `valo-agent-art` / `--agent-art` (not shipped) | ✅ |
 | **Your name** on the lock screen, dashboard, welcome banner, login screen and boot splash (`--player`) | ✅ |
 | **Coding-tools installer** (`--dev`): VS Code + extensions, JupyterLab + data-science kernel, Python/uv, Node, Rust, Go, Java, C/C++, Docker/Podman, databases, cloud CLIs, JetBrains Toolbox ([docs](docs/DEV-TOOLS.md)) | ✅ |
 
@@ -108,7 +110,7 @@ The installer:
 4. adds one tagged include line each to your Hyprland, kitty, foot and GTK configs (with backups).
 
 Flags: `--no-deps`, `--no-shell`, `--no-dots`, `--hypr=lua|conf`, `--sddm`, `--plymouth`, `--player=NAME`,
-`--firefox`, `--dev`, `-y`, `--uninstall`.
+`--agent-art`, `--firefox`, `--dev`, `-y`, `--uninstall`.
 See [docs/DOTFILES.md](docs/DOTFILES.md) for exactly what changes.
 
 Then log into Hyprland, or start the shell with `qs -c caelestia`.

@@ -6,6 +6,7 @@ import Quickshell.Wayland
 import Caelestia.Config
 import qs.components
 import qs.components.containers
+import qs.components.valorant
 import qs.services
 
 Variants {
@@ -48,6 +49,14 @@ Variants {
                 active: Config.background.wallpaperEnabled
 
                 sourceComponent: Wallpaper {}
+            }
+
+            Loader {
+                anchors.fill: parent
+                asynchronous: true
+                active: Config.background.wallpaperEnabled && Valorant.agentArt
+
+                sourceComponent: AgentArt {}
             }
 
             Visualiser {

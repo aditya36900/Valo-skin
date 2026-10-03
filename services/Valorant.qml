@@ -190,6 +190,9 @@ Singleton {
     readonly property bool syncDotfiles: cfg.syncDotfiles ?? true
     // Switch to the agent's bundled wallpaper on lock-in
     readonly property bool agentWallpapers: cfg.agentWallpapers ?? true
+    // Agent portraits over the wallpaper, once `valo-agent-art` has downloaded them
+    readonly property bool agentArt: cfg.agentArt ?? true
+    readonly property string agentArtDir: `${Quickshell.env("XDG_DATA_HOME") || `${Quickshell.env("HOME")}/.local/share`}/valo-skin/agent-art`
     readonly property bool soundsEnabled: enabled && (cfg.sounds?.enabled ?? true)
     readonly property real soundVolume: Math.max(0, Math.min(1, cfg.sounds?.volume ?? 0.6))
     property var lastPlayed: ({})
@@ -225,6 +228,7 @@ Singleton {
             overrideScheme: true,
             syncDotfiles: true,
             agentWallpapers: true,
+            agentArt: true,
             accent: "",
             player: {
                 name: "",
@@ -431,6 +435,10 @@ Singleton {
         if (agentWallpapers)
             Wallpapers.setWallpaper(agentWallpaper(id));
         return true;
+    }
+
+    function agentArtFile(id: string, kind: string): string {
+        return `file://${agentArtDir}/${id}${kind ? `-${kind}` : ""}.png`;
     }
 
     function agentWallpaper(id: string): string {

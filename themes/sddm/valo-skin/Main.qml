@@ -71,6 +71,18 @@ Item {
         asynchronous: true
     }
 
+    // Agent portrait (install.sh copies it in when valo-agent-art has downloaded it)
+    Image {
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.rightMargin: parent.width * 0.04
+        height: parent.height * 0.96
+        fillMode: Image.PreserveAspectFit
+        source: config.agentArt || ""
+        asynchronous: true
+        visible: status === Image.Ready
+    }
+
     // Menu side panel
     Rectangle {
         id: panel

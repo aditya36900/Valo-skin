@@ -76,6 +76,19 @@ the shell running it automatically, set `"syncDotfiles": false` in `valorant.jso
 The fallback scheme (used before the shell has published one, or with `--accent`) is a Python
 port of the shell's generator. It produces the exact same hex values.
 
+## Agent portraits
+
+```sh
+valo-agent-art            # or: ./install.sh --no-deps --no-shell --no-dots --agent-art
+```
+
+Downloads every agent's full portrait and name art from the community
+[valorant-api.com](https://valorant-api.com) into `~/.local/share/valo-skin/agent-art/` (about
+40 MB). Nothing from Riot is shipped in this repo; the files stay on your machine. The shell then
+draws the current agent's portrait over the wallpaper and slides it in on lock-in, and the next
+`./install.sh --sddm` puts it on the login screen. `--force` re-downloads, `--only jett,yoru` limits
+it, `--remove` deletes it, and `"agentArt": false` in `valorant.json` hides it.
+
 ## Cursor theme
 
 `valo-cursors` draws the Valo-Crosshair XCursor theme in pure Python at 24/32/48/64 px: angular
