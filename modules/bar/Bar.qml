@@ -139,7 +139,14 @@ ColumnLayout {
             }
             DelegateChoice {
                 roleValue: "workspaces"
+                // Gives up height (clipped) instead of pushing the clock, status icons and power
+                // button off the bottom of the screen when many apps are open
                 delegate: EntryWrapper {
+                    Layout.fillHeight: true
+                    Layout.minimumHeight: Math.min(implicitHeight, Tokens.sizes.bar.innerWidth * 2)
+                    Layout.maximumHeight: implicitHeight
+                    clip: true
+
                     Workspaces {
                         objectName: "taskbarWorkspaces"
                         screen: root.screen
