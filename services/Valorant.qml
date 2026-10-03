@@ -208,7 +208,8 @@ Singleton {
             contractMedia: cfg.hud?.contractMedia ?? true,
             matchHistory: cfg.hud?.matchHistory ?? true,
             spikeLock: cfg.hud?.spikeLock ?? true,
-            agentSelectLauncher: cfg.hud?.agentSelectLauncher ?? true
+            agentSelectLauncher: cfg.hud?.agentSelectLauncher ?? true,
+            loadoutLauncher: cfg.hud?.loadoutLauncher ?? true
         })
 
     property var cfg: ({})
@@ -255,7 +256,8 @@ Singleton {
                 contractMedia: true,
                 matchHistory: true,
                 spikeLock: true,
-                agentSelectLauncher: true
+                agentSelectLauncher: true,
+                loadoutLauncher: true
             }
         })
 

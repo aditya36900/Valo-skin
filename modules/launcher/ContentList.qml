@@ -18,9 +18,13 @@ Item {
     required property int padding
     required property int rounding
 
+    required property real maxWidth
+
     readonly property bool showWallpapers: search.text.startsWith(`${GlobalConfig.launcher.actionPrefix}wallpaper `)
-    readonly property var currentList: showWallpapers ? wallpaperList.item : appList.item // Can be either ListView or PathView, so can't type properly
-    property string animState: showWallpapers ? "wallpapers" : "apps"
+    // Valo-skin: the buy-menu grid replaces the plain app list (commands still use the list)
+    readonly property bool showLoadout: !showWallpapers && Valorant.hudOn("loadoutLauncher") && !search.text.startsWith(GlobalConfig.launcher.actionPrefix)
+    readonly property var currentList: showWallpapers ? wallpaperList.item : showLoadout ? loadout.item : appList.item // ListView, PathView or LoadoutGrid, so can't type properly
+    property string animState: showWallpapers ? "wallpapers" : showLoadout ? "loadout" : "apps"
 
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.bottom: parent.bottom
@@ -41,6 +45,20 @@ Item {
             AnchorChanges {
                 anchors.left: root.parent.left
                 anchors.right: root.parent.right
+            }
+        },
+        State {
+            name: "loadout"
+
+            PropertyChanges {
+                root.implicitWidth: loadout.implicitWidth
+                root.implicitHeight: Math.min(root.maxHeight, loadout.implicitHeight)
+                loadout.active: true
+            }
+
+            AnchorChanges {
+                anchors.left: undefined
+                anchors.right: undefined
             }
         },
         State {
@@ -90,6 +108,24 @@ Item {
     }
 
     Loader {
+        id: loadout
+
+        active: false
+
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+
+        sourceComponent: LoadoutGrid {
+            objectName: "launcherLoadout"
+
+            search: root.search
+            screenState: root.screenState
+            maxWidth: root.maxWidth
+            maxHeight: root.maxHeight
+        }
+    }
+
+    Loader {
         id: wallpaperList
 
         asynchronous: true
@@ -112,8 +148,8 @@ Item {
     Row {
         id: empty
 
-        opacity: root.currentList?.count === 0 ? 1 : 0
-        scale: root.currentList?.count === 0 ? 1 : 0.5
+        opacity: root.currentList?.count === 0 && !root.showLoadout ? 1 : 0
+        scale: root.currentList?.count === 0 && !root.showLoadout ? 1 : 0.5
 
         spacing: Tokens.spacing.medium
         padding: Tokens.padding.large

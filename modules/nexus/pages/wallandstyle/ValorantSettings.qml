@@ -50,6 +50,11 @@ ColumnLayout {
             subtext: qsTr("\">agent\" mode in the launcher")
         },
         {
+            key: "loadoutLauncher",
+            text: qsTr("Loadout launcher"),
+            subtext: qsTr("App launcher as a buy menu of weapon classes")
+        },
+        {
             key: "matchStats",
             text: qsTr("Match stats"),
             subtext: qsTr("Dashboard cards as a match scoreboard")

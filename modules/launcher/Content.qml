@@ -14,6 +14,7 @@ Item {
     required property ScreenState screenState
     required property var panels
     required property real maxHeight
+    property real maxWidth: 1400
 
     readonly property int padding: Tokens.padding.large
     readonly property int rounding: Tokens.rounding.extraLarge
@@ -38,6 +39,7 @@ Item {
             screenState: root.screenState
             panels: root.panels
             maxHeight: root.maxHeight - search.implicitHeight - root.padding * 3
+            maxWidth: root.maxWidth - root.padding * 2
             search: search
             padding: root.padding
             rounding: root.rounding
@@ -83,6 +85,21 @@ Item {
         Keys.onUpPressed: list.currentList?.decrementCurrentIndex()
         Keys.onDownPressed: list.currentList?.incrementCurrentIndex()
 
+        // Loadout grid: left/right move between weapon classes (only while the search is empty,
+        // so the text cursor still works when typing)
+        Keys.onLeftPressed: event => {
+            if (text.length === 0 && list.currentList?.moveHorizontal)
+                list.currentList.moveHorizontal(-1);
+            else
+                event.accepted = false;
+        }
+        Keys.onRightPressed: event => {
+            if (text.length === 0 && list.currentList?.moveHorizontal)
+                list.currentList.moveHorizontal(1);
+            else
+                event.accepted = false;
+        }
+
         Keys.onEscapePressed: root.screenState.launcher = false
 
         Keys.onPressed: event => {
@@ -97,6 +114,9 @@ Item {
                     list.currentList?.decrementCurrentIndex();
                     event.accepted = true;
                 }
+            } else if (event.key === Qt.Key_Tab && list.currentList?.moveHorizontal) {
+                list.currentList.moveHorizontal(1);
+                event.accepted = true;
             } else if (event.key === Qt.Key_Tab) {
                 list.currentList?.incrementCurrentIndex();
                 event.accepted = true;
