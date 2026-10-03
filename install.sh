@@ -100,6 +100,48 @@ backup() {
     run cp -a -- "$f" "$dest"
 }
 
+# Sets key=value in a KDE-style INI file (konsolerc), via kwriteconfig when available.
+# Usage: kde_set FILE GROUP KEY VALUE   (empty VALUE deletes the key)
+kde_set() {
+    local file="$1" group="$2" key="$3" value="$4" kw
+    kw="$(command -v kwriteconfig6 || command -v kwriteconfig5 || true)"
+    if [[ -n "$kw" ]]; then
+        if [[ -n "$value" ]]; then
+            run "$kw" --file "$file" --group "$group" --key "$key" "$value"
+        else
+            run "$kw" --file "$file" --group "$group" --key "$key" --delete
+        fi
+        return
+    fi
+    (( dry_run )) && { printf '  %s[dry-run]%s %s [%s] %s=%s\n' "$dim" "$off" "$file" "$group" "$key" "$value"; return; }
+    python3 - "$file" "$group" "$key" "$value" <<'PY'
+import sys
+from pathlib import Path
+path, group, key, value = Path(sys.argv[1]), sys.argv[2], sys.argv[3], sys.argv[4]
+lines = path.read_text().splitlines() if path.exists() else []
+out, in_group, done, seen_group = [], False, False, False
+for line in lines:
+    s = line.strip()
+    if s.startswith("[") and s.endswith("]"):
+        if in_group and not done and value:
+            out.append(f"{key}={value}"); done = True
+        in_group = s[1:-1] == group
+        seen_group |= in_group
+    elif in_group and s.split("=", 1)[0] == key:
+        if value and not done:
+            out.append(f"{key}={value}"); done = True
+        continue
+    out.append(line)
+if value and not done:
+    if not (in_group and seen_group):
+        out += ["", f"[{group}]"] if out else [f"[{group}]"]
+    out.append(f"{key}={value}")
+path.parent.mkdir(parents=True, exist_ok=True)
+path.write_text("\n".join(out) + "\n")
+PY
+}
+
+
 # Append (or with ADD_LINE_PREPEND=1, prepend) "<line> <comment> valo-skin<suffix>" to a file,
 # unless an equivalent tagged line exists
 add_line() {
@@ -250,6 +292,14 @@ if (( uninstall )); then
         backup "${config_home}/btop/btop.conf"
         run sed -i 's|^color_theme = "valorant"|color_theme = "Default"|' "${config_home}/btop/btop.conf"
     fi
+    if grep -q "^DefaultProfile=Valorant.profile" "${config_home}/konsolerc" 2>/dev/null; then
+        backup "${config_home}/konsolerc"
+        kde_set "${config_home}/konsolerc" "Desktop Entry" DefaultProfile ""
+        kde_set "${config_home}/konsolerc" TabBar TabBarUseUserStyleSheet ""
+        kde_set "${config_home}/konsolerc" TabBar TabBarUserStyleSheetFile ""
+        say "Konsole profile reset"
+    fi
+    run rm -f -- "${data_home}/konsole/Valorant.colorscheme" "${data_home}/konsole/Valorant.profile" "${data_home}/valo-skin/konsole-tabs.css"
     for d in Code "Code - OSS" VSCodium Cursor; do
         settings="${config_home}/${d}/User/settings.json"
         grep -q "Valorant (Valo-skin)" "$settings" 2>/dev/null || continue
@@ -423,6 +473,14 @@ if (( do_dots )); then
         backup "${config_home}/btop/btop.conf"
         run sed -i 's|^color_theme = .*|color_theme = "valorant"|' "${config_home}/btop/btop.conf"
         say "btop uses the Valorant theme"
+    fi
+    # Konsole: Valorant profile as default, HUD tab bar
+    if command -v konsole >/dev/null || [[ -f "${config_home}/konsolerc" ]]; then
+        backup "${config_home}/konsolerc"
+        kde_set "${config_home}/konsolerc" "Desktop Entry" DefaultProfile Valorant.profile
+        kde_set "${config_home}/konsolerc" TabBar TabBarUseUserStyleSheet true
+        kde_set "${config_home}/konsolerc" TabBar TabBarUserStyleSheetFile "file://${data_home}/valo-skin/konsole-tabs.css"
+        say "Konsole uses the Valorant profile (new windows)"
     fi
     # VS Code family: set the colour theme when settings.json is plain JSON (left alone if it has comments)
     for d in Code "Code - OSS" VSCodium Cursor; do

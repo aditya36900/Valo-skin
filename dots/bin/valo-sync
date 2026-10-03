@@ -6,7 +6,7 @@ Reads the scheme the shell publishes to ~/.local/state/caelestia/valorant-scheme
 
   Hyprland (Lua + hyprlang), kitty, foot, alacritty, fastfetch, GTK 3/4, qt5ct/qt6ct,
   the Valo-Crosshair cursor accent, and (when installed) btop, Neovim, VS Code / VSCodium,
-  Firefox (opted-in profiles), Vesktop / Vencord, Spicetify and JupyterLab.
+  Firefox (opted-in profiles), Vesktop / Vencord, Spicetify, JupyterLab and Konsole.
 
 Each target only gets a small *include* file; your own configs are never rewritten
 (install.sh adds the one include line per app). Files are only touched when their
@@ -32,7 +32,7 @@ SCHEME_FILE = XDG_STATE / "caelestia" / "valorant-scheme.json"
 SHARE_DIR = XDG_DATA / "valo-skin"
 
 TARGETS = ["hypr", "kitty", "foot", "alacritty", "fastfetch", "gtk", "qt", "cursor",
-           "btop", "nvim", "vscode", "firefox", "discord", "spicetify", "jupyter"]
+           "btop", "nvim", "vscode", "firefox", "discord", "spicetify", "jupyter", "konsole"]
 
 # ---------------------------------------------------------------- colour maths
 
@@ -627,11 +627,110 @@ def render_jupyter(p):
     return {HOME / ".jupyter/custom/custom.css": css}
 
 
+KONSOLE_FONTS = ["CaskaydiaCove Nerd Font Mono", "CaskaydiaCove NF", "Cascadia Code NF", "Cascadia Mono",
+                 "JetBrainsMono Nerd Font", "JetBrains Mono", "Fira Code", "Hack"]
+
+
+def konsole_font():
+    """First installed monospace font from KONSOLE_FONTS, in KConfig's font string format."""
+    if not have("fc-list"):
+        return None
+    try:
+        families = subprocess.run(["fc-list", ":spacing=mono", "family"], capture_output=True, text=True,
+                                  timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    installed = {f.strip() for line in families.splitlines() for f in line.split(",")}
+    for fam in KONSOLE_FONTS:
+        if fam in installed:
+            return f"{fam},11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
+    return None
+
+
+def render_konsole(p):
+    """Colour scheme + profile + tab-bar stylesheet. install.sh makes the profile the default and
+    points Konsole's tab bar at the stylesheet (konsolerc)."""
+    if not (have("konsole") or (XDG_DATA / "konsole").exists()):
+        return {}
+
+    def rgb(k):
+        r, g, b = (round(v * 255) for v in parse(p.c[k]))
+        return f"{r},{g},{b}"
+
+    def term_rgb(i):
+        r, g, b = (round(v * 255) for v in parse(p.term(i)))
+        return f"{r},{g},{b}"
+
+    def faint(i):
+        return ",".join(str(round(int(a) * 0.65 + int(b) * 0.35)) for a, b in zip(term_rgb(i).split(","), rgb("background").split(",")))
+
+    scheme = [header(p).rstrip(),
+              "[General]", "Description=Valorant (Valo-skin)", "Opacity=0.94", "Blur=true", "ColorRandomization=false", "",
+              "[Background]", f"Color={rgb('background')}", "", "[BackgroundIntense]", f"Color={rgb('surfaceContainer')}", "",
+              "[BackgroundFaint]", f"Color={rgb('background')}", "",
+              "[Foreground]", f"Color={rgb('onSurface')}", "", "[ForegroundIntense]", f"Color={rgb('onSurface')}", "Bold=true", "",
+              "[ForegroundFaint]", f"Color={rgb('onSurfaceVariant')}", ""]
+    for i in range(8):
+        scheme += [f"[Color{i}]", f"Color={term_rgb(i)}", "", f"[Color{i}Intense]", f"Color={term_rgb(i + 8)}", "",
+                   f"[Color{i}Faint]", f"Color={faint(i)}", ""]
+
+    profile = [header(p).rstrip(),
+               "[Appearance]", "ColorScheme=Valorant"]
+    font = konsole_font()
+    if font:
+        profile.append(f"Font={font}")
+    profile += ["LineSpacing=1", "",
+                "[Cursor Options]", "CursorShape=0", "UseCustomCursorColor=true",
+                f"CustomCursorColor={rgb('primary')}", f"CustomCursorTextColor={rgb('background')}", "",
+                "[General]", "Name=Valorant", "Parent=FALLBACK/", "TerminalMargin=14", "TerminalCenter=true",
+                "LocalTabTitleFormat=%n  //  %d", "RemoteTabTitleFormat=%H  //  %d", "",
+                "[Interaction Options]", "UnderlineFilesEnabled=true", "",
+                "[Scrolling]", "HistorySize=10000", "ScrollBarPosition=2", "",
+                "[Terminal Features]", "BlinkingCursorEnabled=true", "UrlHintsModifiers=67108864", ""]
+
+    c = p.h
+    css = header(p, "/*").rstrip() + f""" */
+/* Konsole tab bar: sharp HUD tabs with an accent underline on the active one */
+QTabBar {{
+    background: {c('background')};
+    border: none;
+}}
+QTabBar::tab {{
+    background: {c('surfaceContainer')};
+    color: {c('onSurfaceVariant')};
+    padding: 6px 18px;
+    margin-right: 2px;
+    border: none;
+    border-bottom: 2px solid {c('surfaceContainer')};
+    min-width: 7em;
+    font-weight: 600;
+}}
+QTabBar::tab:hover {{
+    background: {c('surfaceContainerHigh')};
+    color: {c('onSurface')};
+}}
+QTabBar::tab:selected {{
+    background: {c('surfaceContainerHigh')};
+    color: {c('onSurface')};
+    border-bottom: 2px solid {c('primary')};
+}}
+QTabBar::close-button {{
+    subcontrol-position: right;
+}}
+"""
+    return {
+        XDG_DATA / "konsole/Valorant.colorscheme": "\n".join(scheme),
+        XDG_DATA / "konsole/Valorant.profile": "\n".join(profile),
+        SHARE_DIR / "konsole-tabs.css": css,
+    }
+
+
 RENDERERS = {
     "hypr": render_hypr, "kitty": render_kitty, "foot": render_foot, "alacritty": render_alacritty,
     "fastfetch": render_fastfetch, "gtk": render_gtk, "qt": render_qt, "cursor": render_cursor,
     "btop": render_btop, "nvim": render_nvim, "vscode": render_vscode, "firefox": render_firefox,
     "discord": render_discord, "spicetify": render_spicetify, "jupyter": render_jupyter,
+    "konsole": render_konsole,
 }
 
 # ---------------------------------------------------------------- reloads
