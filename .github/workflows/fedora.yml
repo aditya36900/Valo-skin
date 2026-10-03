@@ -1,0 +1,31 @@
+name: Fedora build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: fedora:44
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable Fedora build repositories
+        run: >-
+          dnf install -y dnf-plugins-core &&
+          dnf copr enable -y errornointernet/quickshell
+      - name: Install Fedora dependencies
+        run: >-
+          dnf install -y cmake ninja-build gcc-c++ pkgconf-pkg-config git
+          qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtshadertools-devel
+          qt6-qtimageformats qt6-qtsvg-devel pipewire-devel aubio-devel
+          cava fftw-devel libqalculate-devel lm_sensors-devel
+          google-rubik-fonts cascadia-code-nf-fonts quickshell
+      - name: Configure and build
+        run: >-
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DENABLE_MODULES=plugin\;extras\;m3shapes
+          -DFETCHCONTENT_FULLY_DISCONNECTED=OFF
+          -DVERSION=0.0.0 -DGIT_REVISION=${{ github.sha }}
+      - name: Compile
+        run: cmake --build build

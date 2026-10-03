@@ -1,0 +1,45 @@
+name: Check formatting
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  check-qml:
+    runs-on: ubuntu-latest
+    container: fedora:44
+
+    steps:
+      - name: Install formatting dependencies
+        run: >-
+          dnf install -y git fish python3 clang-tools-extra
+          qt6-qtdeclarative-devel
+      - uses: actions/checkout@v6
+
+      - name: Check QML format
+        shell: fish {0}
+        run: |
+          /usr/lib64/qt6/bin/qmlformat --version
+          for file in (string match -v 'build/*' **.qml)
+            /usr/lib64/qt6/bin/qmlformat $file | diff -u $file - || exit 1
+          end
+          python3 scripts/qml-lint-conventions.py
+
+  check-cpp:
+    runs-on: ubuntu-latest
+    container: fedora:44
+
+    steps:
+      - name: Install formatting dependencies
+        run: >-
+          dnf install -y git fish clang-tools-extra
+      - uses: actions/checkout@v6
+
+      - name: Check C++ format
+        shell: fish {0}
+        run: |
+          clang-format --version
+          find plugin extras -name '*.cpp' -o -name '*.hpp' \
+            | xargs clang-format --dry-run --Werror

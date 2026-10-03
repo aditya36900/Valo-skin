@@ -1,0 +1,34 @@
+qml_module(caelestia-services
+    URI Caelestia.Services
+    SOURCES
+        service.cpp
+        serviceref.cpp
+        beattracker.cpp
+        audiocollector.cpp
+        audioprovider.cpp
+        cavaprovider.cpp
+        tickingservice.cpp
+        sensorslib.cpp
+        usagefmt.cpp
+        cpu.cpp
+        gpu.cpp
+        memory.cpp
+        diskinfo.cpp
+        storage.cpp
+        lyriccandidate.cpp
+        lyrics.cpp
+        sessionmanager.cpp
+    LIBRARIES
+        Qt::DBus
+        PkgConfig::Pipewire
+        PkgConfig::Aubio
+        ${CAELESTIA_CAVA_TARGET}
+        Sensors::Sensors
+        caelestia-core
+        caelestia-config
+        caelestia-internal
+)
+
+if(CAELESTIA_CAVA_BUNDLED)
+    target_compile_definitions(caelestia-services PRIVATE CAELESTIA_BUNDLED_CAVACORE)
+endif()
