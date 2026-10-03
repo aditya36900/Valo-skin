@@ -136,6 +136,24 @@ ColumnLayout {
     ToggleRow {
         Layout.topMargin: Tokens.spacing.extraSmall / 2 - parent.spacing
 
+        text: qsTr("Agent wallpapers")
+        subtext: qsTr("Switch to the agent's wallpaper on lock-in")
+        checked: Valorant.agentWallpapers
+        onToggled: Valorant.set("agentWallpapers", checked)
+    }
+
+    ToggleRow {
+        Layout.topMargin: Tokens.spacing.extraSmall / 2 - parent.spacing
+
+        text: qsTr("Sync desktop colours")
+        subtext: qsTr("Recolour Hyprland, terminals, GTK, Qt and the cursor with valo-sync")
+        checked: Valorant.syncDotfiles
+        onToggled: Valorant.set("syncDotfiles", checked)
+    }
+
+    ToggleRow {
+        Layout.topMargin: Tokens.spacing.extraSmall / 2 - parent.spacing
+
         text: qsTr("Valorant palette")
         subtext: qsTr("Off uses the wallpaper colour scheme instead")
         checked: Valorant.overrideScheme
@@ -202,6 +220,37 @@ ColumnLayout {
         subtext: qsTr("Subtle scanline overlay on panels")
         checked: Valorant.scanlines
         onToggled: Valorant.set("fx.scanlines", checked)
+    }
+
+    SectionHeader {
+        text: qsTr("Sound")
+    }
+
+    ToggleRow {
+        first: true
+        text: qsTr("UI sounds")
+        subtext: qsTr("Lock-in, spike plant and defuse, kill-banner ping")
+        checked: Valorant.cfg.sounds?.enabled ?? true
+        onToggled: {
+            Valorant.set("sounds.enabled", checked);
+            if (checked)
+                Valorant.play("tick");
+        }
+    }
+
+    StepperRow {
+        Layout.topMargin: Tokens.spacing.extraSmall / 2 - root.spacing
+
+        last: true
+        label: qsTr("Volume")
+        value: Math.round(Valorant.soundVolume * 100)
+        from: 0
+        to: 100
+        stepSize: 10
+        onMoved: v => {
+            Valorant.set("sounds.volume", v / 100);
+            Valorant.play("tick");
+        }
     }
 
     SectionHeader {

@@ -43,6 +43,8 @@ switch at any time.
 | **Hyprland look**: sharp corners, rotating accent-gradient borders, hard shadows, snappy "valoSnap" animations, agent keybinds (Lua and hyprlang) | ✅ |
 | **Valo-Crosshair cursor theme**: original angular cursors and a Valorant-style crosshair, tinted per agent | ✅ |
 | **One-shot installer** for Arch and Fedora with backups, idempotent re-runs and `--uninstall` | ✅ |
+| **Agent wallpapers**: an original wallpaper per agent (accent shards, name and role), swapped on lock-in | ✅ |
+| **UI sounds**: original synthesized lock-in, spike plant/defuse, failed-defuse and kill-banner sounds | ✅ |
 
 ## Previews
 
@@ -59,6 +61,10 @@ Offscreen renders of the real components (stubbed system data):
 Chamfer-mode panel shader (navy = panels and screen frame):
 
 <img src="docs/previews/chamfer-panels.png" width="450">
+
+Agent wallpapers (Jett, Reyna, Viper, Killjoy):
+
+<img src="docs/previews/agent-wallpapers.png" width="640">
 
 | fastfetch (illustrative system values) | Valo-Crosshair cursors |
 |---|---|

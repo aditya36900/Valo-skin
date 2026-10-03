@@ -184,6 +184,11 @@ Singleton {
 
     // Regenerate terminal/Hyprland/GTK/Qt/cursor colours with valo-sync whenever the scheme changes
     readonly property bool syncDotfiles: cfg.syncDotfiles ?? true
+    // Switch to the agent's bundled wallpaper on lock-in
+    readonly property bool agentWallpapers: cfg.agentWallpapers ?? true
+    readonly property bool soundsEnabled: enabled && (cfg.sounds?.enabled ?? true)
+    readonly property real soundVolume: Math.max(0, Math.min(1, cfg.sounds?.volume ?? 0.6))
+    property var lastPlayed: ({})
 
     readonly property real fxIntensity: Math.max(0, Math.min(2, cfg.fx?.intensity ?? 1))
     readonly property bool glitch: (cfg.fx?.glitch ?? true) && fxIntensity > 0
@@ -209,7 +214,12 @@ Singleton {
             mode: "dark",
             overrideScheme: true,
             syncDotfiles: true,
+            agentWallpapers: true,
             accent: "",
+            sounds: {
+                enabled: true,
+                volume: 0.6
+            },
             palette: {
                 red: "#ff4655",
                 navy: "#0f1923",
@@ -398,7 +408,28 @@ Singleton {
             return false;
         set("agent", id);
         agentLockedIn(id);
+        play("lockin");
+        if (agentWallpapers)
+            Wallpapers.setWallpaper(agentWallpaper(id));
         return true;
+    }
+
+    function agentWallpaper(id: string): string {
+        return Quickshell.shellPath(`assets/wallpapers/agents/${id}.webp`);
+    }
+
+    // Plays a bundled UI sound (lockin, plant, defuse, fail, banner, tick). Throttled per sound so
+    // per-monitor surfaces don't stack copies.
+    function play(name: string): void {
+        if (!soundsEnabled || soundVolume <= 0)
+            return;
+        const now = Date.now();
+        if (now - (lastPlayed[name] ?? 0) < 400)
+            return;
+        lastPlayed[name] = now;
+        const file = Quickshell.shellPath(`assets/sounds/${name}.wav`);
+        const vol = soundVolume.toFixed(2);
+        Quickshell.execDetached(["sh", "-c", 'pw-play --volume="$1" "$2" 2>/dev/null || paplay --volume="$(awk "BEGIN{print int($1*65536)}")" "$2" 2>/dev/null || aplay -q "$2"', "valo-sound", vol, file]);
     }
 
     function cycleAgent(dir: int): void {
@@ -499,6 +530,11 @@ Singleton {
                 return "Expected dark or light";
             root.set("mode", m);
             return `Mode: ${m}`;
+        }
+
+        function sound(name: string): string {
+            root.play(name);
+            return root.soundsEnabled ? `Playing ${name}` : "Sounds are disabled";
         }
 
         function toggle(): string {

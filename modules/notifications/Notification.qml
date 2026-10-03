@@ -34,6 +34,8 @@ StyledRect {
     Component.onCompleted: {
         x = 0;
         modelData.lock(this);
+        if (killBanner)
+            Valorant.play("banner");
     }
     Component.onDestruction: modelData.unlock(this)
 

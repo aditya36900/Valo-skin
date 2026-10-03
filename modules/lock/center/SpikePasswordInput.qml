@@ -53,6 +53,11 @@ ColumnLayout {
     spacing: Tokens.spacing.small * centerScale
 
     focus: true
+    onDefusedChanged: {
+        if (defused)
+            Valorant.play("defuse");
+    }
+    Component.onCompleted: Valorant.play("plant")
     onActiveFocusChanged: {
         if (!activeFocus)
             forceActiveFocus();
@@ -311,6 +316,7 @@ ColumnLayout {
 
     Connections {
         function onFlashMsg(): void {
+            Valorant.play("fail");
             if (Valorant.fxIntensity > 0)
                 shakeAnim.restart();
         }

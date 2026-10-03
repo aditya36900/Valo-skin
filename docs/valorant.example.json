@@ -4,7 +4,12 @@
     "mode": "dark",
     "overrideScheme": true,
     "syncDotfiles": true,
+    "agentWallpapers": true,
     "accent": "",
+    "sounds": {
+        "enabled": true,
+        "volume": 0.6
+    },
     "palette": {
         "red": "#ff4655",
         "navy": "#0f1923",
