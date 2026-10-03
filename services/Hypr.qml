@@ -19,7 +19,11 @@ Singleton {
 
     readonly property HyprlandToplevel activeToplevel: {
         const t = Hyprland.activeToplevel;
-        return t?.workspace?.name.startsWith("special:") || Hyprland.focusedWorkspace?.toplevels.values.length > 0 ? t : null;
+        const ws = t?.workspace?.name ?? "";
+        // A window parked on a hidden special workspace (e.g. minimized to the bench) isn't active
+        if (ws.startsWith("special:"))
+            return Hyprland.monitors.values.some(m => m.lastIpcObject?.specialWorkspace?.name === ws) ? t : null;
+        return Hyprland.focusedWorkspace?.toplevels.values.length > 0 ? t : null;
     }
     readonly property HyprlandWorkspace focusedWorkspace: Hyprland.focusedWorkspace
     readonly property HyprlandMonitor focusedMonitor: Hyprland.focusedMonitor

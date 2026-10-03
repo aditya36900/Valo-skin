@@ -55,11 +55,6 @@ Item {
                 root.implicitHeight: Math.min(root.maxHeight, loadout.implicitHeight)
                 loadout.active: true
             }
-
-            AnchorChanges {
-                anchors.left: undefined
-                anchors.right: undefined
-            }
         },
         State {
             name: "wallpapers"

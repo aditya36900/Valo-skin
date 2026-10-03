@@ -114,7 +114,7 @@ Item {
     readonly property int count: searching ? results.length : allApps.length
 
     function classify(entry: var): string {
-        const cats = entry?.categories ?? [];
+        const cats = Array.from(entry?.categories ?? []);
         for (const c of classes)
             if (c.cats.some(k => cats.includes(k)))
                 return c.id;

@@ -19,11 +19,13 @@ Column {
     spacing: Tokens.spacing.extraSmall
     visible: Bench.windows.length > 0
 
-    StyledText {
+    // Divider with a small "bench" marker, narrow enough for the vertical bar
+    Rectangle {
         anchors.horizontalCenter: parent.horizontalCenter
-        text: qsTr("Bench")
-        color: Colours.palette.m3onSurfaceVariant
-        font: Tokens.font.label.small
+        implicitWidth: root.tileSize
+        implicitHeight: 2
+        color: Colours.palette.m3primary
+        opacity: 0.6
     }
 
     Repeater {

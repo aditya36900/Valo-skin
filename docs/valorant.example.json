@@ -6,6 +6,12 @@
     "syncDotfiles": true,
     "agentWallpapers": true,
     "accent": "",
+    "player": {
+        "name": "Aditya Tipirneni",
+        "title": "Agent",
+        "welcome": true
+    },
+    "layouts": ["dwindle", "master", "scrolling"],
     "sounds": {
         "enabled": true,
         "volume": 0.6
@@ -37,6 +43,7 @@
         "chargeOsd": true,
         "spikeLock": true,
         "agentSelectLauncher": true,
+        "loadoutLauncher": true,
         "matchStats": true
     }
 }

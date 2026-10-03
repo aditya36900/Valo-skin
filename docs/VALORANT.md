@@ -17,6 +17,15 @@ the shell log, so the defaults are used until you fix it.
 | `syncDotfiles` | bool | `true` | Run `valo-sync` after every scheme change, so Hyprland, terminals, GTK, Qt and the cursor follow the agent. See [DOTFILES.md](DOTFILES.md). |
 | `accent` | `"#rrggbb"` \| `""` | `""` | Custom primary accent. Empty uses the agent's colour. |
 | `agentWallpapers` | bool | `true` | On lock-in, switch to the agent's bundled wallpaper (`assets/wallpapers/agents/<id>.webp`). |
+| `layouts` | string[] | `["dwindle", "master", "scrolling"]` | Hyprland layouts that `SUPER+ALT+T` and the bar's layout button cycle through. Ones your Hyprland doesn't support are skipped. |
+
+## `player`
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `name` | string | `""` | Your name, shown on the lock screen player card, the lock screen fetch, the dashboard and the welcome banner. Empty uses your account's full name (or username). `./install.sh --player="Your Name"` sets it and also puts it on the SDDM login screen and the Plymouth boot splash. |
+| `title` | string | `"Agent"` | Shown above the name (lock screen, "Welcome back, Agent"). |
+| `welcome` | bool | `true` | Play the "Welcome back" glitch banner once per session when the shell starts (needs `fx.glitch`). |
 
 ## `sounds`
 
@@ -80,6 +89,7 @@ They all also require `enabled: true`.
 | `chargeOsd` | Volume/mic/brightness sliders as ability charge meters; turn gold at 100% |
 | `spikeLock` | Lock screen password input as a spike defuse bar |
 | `agentSelectLauncher` | `>agent` launcher mode (and the **Agent** action) |
+| `loadoutLauncher` | App launcher as a buy menu: apps sorted into weapon classes (Sidearms = system, SMGs = internet, Shotguns = utilities, Rifles = development, Snipers = creative/office, Heavies = media/games), an **Equipped** row of your most-used apps, launch counts as gold credits. Typing switches to a search grid; arrows/Tab move, Enter launches. `>` commands still use the list. |
 | `matchStats` | Dashboard and performance cards as HUD-framed match stats; CPU/GPU load as a rank tier |
 | `contractMedia` | Dashboard media: track progress as 10 contract tiers instead of the dancing gif |
 | `matchHistory` | Notification sidebar framed and titled as match history |
@@ -143,6 +153,20 @@ All commands are available as `qs -c caelestia ipc call valorant <cmd> [arg]` or
 | `sound <name>` | Play a UI sound: `lockin`, `plant`, `defuse`, `fail`, `banner`, `tick` |
 
 Every IPC change is saved back to `valorant.json`.
+
+Two more IPC targets come with the bar:
+
+| Command | Description |
+|---|---|
+| `bench minimize` | Park the focused window on the bench (`special:minimized`), also `SUPER+ALT+M` |
+| `bench restore` | Call the most recently benched window back to the current workspace, also `SUPER+ALT+SHIFT+M` |
+| `bench restoreAll` / `bench list` | Restore everything / print benched windows |
+| `layout next` | Next tiling layout, also `SUPER+ALT+T` |
+| `layout set <name>` / `layout get` | Set or print the layout |
+
+Hyprland has no real minimize, so windows whose own minimize button is pressed are moved to the bench
+too. The bar shows benched windows (and any other window on a hidden special workspace) as app
+tiles: click one to bring it back, middle-click to close it.
 
 Example Hyprland binds:
 

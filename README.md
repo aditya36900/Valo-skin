@@ -49,6 +49,11 @@ switch at any time.
 | **Leave match** session menu, **contract-tier** media progress, **match history** notification sidebar | ✅ |
 | **SDDM login theme** (main-menu style, spike-defuse password) and **Plymouth boot splash** (`--sddm`, `--plymouth`) | ✅ |
 | **App themes that follow the agent**: btop, Neovim, VS Code / VSCodium / Cursor, JupyterLab, Firefox userChrome (`--firefox`), Vesktop/Vencord, Spicetify | ✅ |
+| **Loadout launcher**: the app launcher as a Valorant buy menu, apps in weapon classes, an Equipped row of your most-used apps | ✅ |
+| **Comms Wi-Fi panel**: every network in range in a scrollable list with All / Saved / Open / Locked filters, signal pips, band tags | ✅ |
+| **Bench**: minimize windows (`SUPER+ALT+M` or their own button) and call them back from the bar | ✅ |
+| **Auto-tiling + layout switch** (`SUPER+ALT+T`): dwindle / master / scrolling, shown in the bar | ✅ |
+| **Your name** on the lock screen, dashboard, welcome banner, login screen and boot splash (`--player`) | ✅ |
 | **Coding-tools installer** (`--dev`): VS Code + extensions, JupyterLab + data-science kernel, Python/uv, Node, Rust, Go, Java, C/C++, Docker/Podman, databases, cloud CLIs, JetBrains Toolbox ([docs](docs/DEV-TOOLS.md)) | ✅ |
 
 ## Previews
@@ -66,6 +71,14 @@ Offscreen renders of the real components (stubbed system data):
 Chamfer-mode panel shader (navy = panels and screen frame):
 
 <img src="docs/previews/chamfer-panels.png" width="450">
+
+Loadout launcher:
+
+<img src="docs/previews/loadout.png" width="760">
+
+| Comms Wi-Fi panel | Login screen (SDDM) | Boot splash (Plymouth) |
+|---|---|---|
+| <img src="docs/previews/comms-wifi.png" width="220"> | <img src="docs/previews/sddm.png" width="380"> | <img src="docs/previews/plymouth.png" width="300"> |
 
 | Agent quick-switch ring | Leave match + contract media |
 |---|---|
@@ -94,8 +107,8 @@ The installer:
 3. installs `valo-sync`, the fonts and the Valo-Crosshair cursor;
 4. adds one tagged include line each to your Hyprland, kitty, foot and GTK configs (with backups).
 
-Flags: `--no-deps`, `--no-shell`, `--no-dots`, `--hypr=lua|conf`, `--sddm`, `--plymouth`, `--firefox`, `--dev`, `-y`,
-`--uninstall`.
+Flags: `--no-deps`, `--no-shell`, `--no-dots`, `--hypr=lua|conf`, `--sddm`, `--plymouth`, `--player=NAME`,
+`--firefox`, `--dev`, `-y`, `--uninstall`.
 See [docs/DOTFILES.md](docs/DOTFILES.md) for exactly what changes.
 
 Then log into Hyprland, or start the shell with `qs -c caelestia`.

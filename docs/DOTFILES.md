@@ -37,6 +37,9 @@ only `custom_palette=false` (the default).
 
 `dots/hypr/valorant.lua` (and the equivalent `valorant.conf`) sets:
 
+- auto-tiling: dwindle splits along the focused window's longer side and keeps splits; `SUPER+ALT+T`
+  (or the layout button in the bar) cycles dwindle / master / scrolling, and the choice survives
+  config reloads
 - 2 px borders with a rotating agent-accent → red gradient; inactive borders in the outline colour
 - `rounding = 0`, gaps 4/8 to match the shell's screen frame, hard 4 px offset shadows, blur on
 - "valoSnap" animations: quick slides with a slight overshoot, vertical workspace slides
@@ -50,6 +53,9 @@ only `custom_palette=false` (the default).
 | `SUPER+ALT+V` | Valorant palette ↔ wallpaper scheme |
 | `SUPER+ALT+L` / `D` | Light / dark mode |
 | `SUPER+ALT+S` | Re-run valo-sync |
+| `SUPER+ALT+T` | Next tiling layout |
+| `SUPER+ALT+M` | Minimize the focused window to the bench |
+| `SUPER+ALT+SHIFT+M` | Restore the last benched window |
 
 It's loaded *after* your own settings, so it wins on conflicts. To change something, put your
 override after the `require("valorant")` / `source` line.
@@ -82,8 +88,12 @@ yourself. Anything it doesn't draw falls back to Adwaita.
 ## Login screen and boot splash (opt-in)
 
 ```sh
-./install.sh --no-shell --no-dots --sddm --plymouth
+./install.sh --no-deps --no-shell --no-dots --sddm --plymouth --player="Your Name"
 ```
+
+`--player` saves your name to `valorant.json` and writes it onto both screens (the login headline and
+your account card, and "AGENT / YOUR NAME" above the boot crosshair). Without it the installer uses
+`player.name` from `valorant.json`, then your account's full name.
 
 **SDDM** (`themes/sddm/valo-skin`, Qt 6): a Valorant main-menu style login. Users are listed as
 agents to lock in, the password field is a spike defuse bar (planted → defusing → failed with a
@@ -98,8 +108,9 @@ disks. Needs Plymouth's label plugin for text (Fedora: `plymouth-plugin-label`; 
 On Fedora the installer rebuilds the initramfs; on Arch it runs `mkinitcpio -P` if the `plymouth`
 hook is configured, and tells you what to add otherwise. Add `splash` to your kernel command line.
 
-`--uninstall` removes both and restores your previous Plymouth theme.
+`--uninstall` removes both, re-enables your previous login manager and restores your previous
+Plymouth theme.
 
-| SDDM | Plymouth (boot, then passphrase) |
+| SDDM | Plymouth |
 |---|---|
 | <img src="previews/sddm.png" width="480"> | <img src="previews/plymouth.png" width="320"> |
