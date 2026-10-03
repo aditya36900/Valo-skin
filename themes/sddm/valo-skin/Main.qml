@@ -137,7 +137,7 @@ Item {
         }
 
         Text {
-            text: "VALO-SKIN"
+            text: (config.headline || "VALO-SKIN").toUpperCase()
             color: root.white
             font.family: bebas.name
             font.pixelSize: Math.min(96, root.height * 0.085)
@@ -197,7 +197,7 @@ Item {
                     anchors.left: parent.left
                     anchors.leftMargin: 20
                     anchors.verticalCenter: parent.verticalCenter
-                    text: (userRow.realName || userRow.name).toUpperCase()
+                    text: (userRow.name === config.playerUser && config.playerName ? config.playerName : userRow.realName || userRow.name).toUpperCase()
                     color: userRow.selected ? root.white : Qt.alpha(root.white, 0.7)
                     font.family: oswald.name
                     font.pixelSize: 22

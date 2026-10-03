@@ -35,8 +35,30 @@ ColumnLayout {
     ProfilePic {
         Layout.alignment: Qt.AlignHCenter
         Layout.topMargin: Tokens.spacing.extraExtraLarge * root.centerScale
-        Layout.bottomMargin: Tokens.spacing.extraLarge * root.centerScale
+        Layout.bottomMargin: Valorant.enabled ? 0 : Tokens.spacing.extraLarge * root.centerScale
         centerWidth: root.centerWidth
+    }
+
+    // Player card under the avatar
+    Column {
+        Layout.alignment: Qt.AlignHCenter
+        Layout.bottomMargin: Tokens.spacing.extraLarge * root.centerScale
+        visible: Valorant.enabled && Valorant.playerName.length > 0
+        spacing: 0
+
+        StyledText {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: Valorant.playerTitle
+            color: Colours.palette.m3primary
+            font: Tokens.font.label.large
+        }
+
+        StyledText {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: Valorant.playerName
+            color: Colours.palette.m3onSurface
+            font: Tokens.font.headline.small
+        }
     }
 
     Loader {

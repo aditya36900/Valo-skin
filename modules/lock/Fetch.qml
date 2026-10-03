@@ -101,7 +101,7 @@ StyledRect {
                             items.push(`WM  : ${SysInfo.wm}`);
 
                         if (!hasBatt || rHeight > Tokens.sizes.lock.fetch3LinesHeight)
-                            items.push(`USER: ${SysInfo.user}`);
+                            items.push(Valorant.enabled ? `PLAYER: ${Valorant.playerName}` : `USER: ${SysInfo.user}`);
 
                         items.push(`UP  : ${SysInfo.uptime}`);
 

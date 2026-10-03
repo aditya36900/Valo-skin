@@ -170,6 +170,10 @@ Singleton {
     readonly property bool active: enabled && overrideScheme
     readonly property string agent: agents.hasOwnProperty(cfg.agent) ? cfg.agent : "valorant"
     readonly property var agentInfo: agents[agent]
+    // Shown on the lock screen, dashboard, welcome banner, login screen and boot splash
+    readonly property string playerName: (cfg.player?.name ?? "").trim() || SysInfo.realName || SysInfo.user
+    readonly property string playerTitle: (cfg.player?.title ?? "").trim() || qsTr("Agent")
+    readonly property bool welcomeBanner: cfg.player?.welcome ?? true
     readonly property bool light: (cfg.mode ?? "dark") === "light"
     readonly property color accent: validColour(cfg.accent) ? cfg.accent : agentInfo.accent
     readonly property var paletteCfg: cfg.palette ?? ({})
@@ -222,6 +226,11 @@ Singleton {
             syncDotfiles: true,
             agentWallpapers: true,
             accent: "",
+            player: {
+                name: "",
+                title: "",
+                welcome: true
+            },
             sounds: {
                 enabled: true,
                 volume: 0.6

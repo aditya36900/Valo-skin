@@ -34,6 +34,21 @@ cross.SetX(centre_x - cross_image.GetWidth() / 2);
 cross.SetY(centre_y - cross_image.GetHeight() / 2);
 cross.SetZ(11);
 
+# ---------------------------------------------------------------- player name (above the emblem)
+player_name = ""; # VALO_PLAYER_NAME: install.sh fills this from valorant.json -> player.name
+if (player_name != "") {
+    player_title_image = Image.Text("AGENT", 1.0, 0.275, 0.333, 1, "Oswald 13");
+    player_title = Sprite(player_title_image);
+    player_title.SetX(centre_x - player_title_image.GetWidth() / 2);
+    player_title.SetZ(12);
+    player_image = Image.Text(player_name, 0.925, 0.91, 0.882, 1, "Oswald 30");
+    player = Sprite(player_image);
+    player.SetX(centre_x - player_image.GetWidth() / 2);
+    player.SetY(centre_y - emblem_image.GetHeight() / 2 - player_image.GetHeight() - 36);
+    player.SetZ(12);
+    player_title.SetY(centre_y - emblem_image.GetHeight() / 2 - player_image.GetHeight() - player_title_image.GetHeight() - 38);
+}
+
 # ---------------------------------------------------------------- label + progress cells
 label_image = Image.Text("LOADING MATCH", 0.925, 0.91, 0.882, 0.8, "Oswald 16");
 label = Sprite(label_image);

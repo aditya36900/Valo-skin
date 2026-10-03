@@ -1,16 +1,20 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import Quickshell
 import Caelestia.Config
 import qs.components
 import qs.services
 
 // Agent lock-in flourish: jittering accent bars over the screen and the agent's name, ~1 s.
-// Purely visual (no input handling); plays on Valorant.agentLockedIn when fx.glitch is on.
+// Purely visual (no input handling); plays on Valorant.agentLockedIn when fx.glitch is on,
+// and once per session as a "Welcome back" banner with the player's name.
 Item {
     id: root
 
     property string agentName
+    property string caption: qsTr("Agent locked in")
+    property real hold: 1
     property color accent: Valorant.accent
     property int seed
 
@@ -23,7 +27,18 @@ Item {
     function play(): void {
         if (!Valorant.glitch)
             return;
+        caption = qsTr("Agent locked in");
         agentName = Valorant.agentInfo.name;
+        hold = 1;
+        anim.restart();
+    }
+
+    function playWelcome(): void {
+        if (!Valorant.glitch || !Valorant.welcomeBanner || !Valorant.playerName)
+            return;
+        caption = qsTr("Welcome back, %1").arg(Valorant.playerTitle);
+        agentName = Valorant.playerName;
+        hold = 3;
         anim.restart();
     }
 
@@ -37,6 +52,24 @@ Item {
         }
 
         target: Valorant
+    }
+
+    // Welcome banner once per session (survives shell reloads)
+    PersistentProperties {
+        id: session
+
+        property bool welcomed
+
+        reloadableId: "valoWelcome"
+    }
+
+    Timer {
+        running: !session.welcomed
+        interval: 1800
+        onTriggered: {
+            session.welcomed = true;
+            root.playWelcome();
+        }
     }
 
     // Horizontal glitch slices, re-randomised every frame tick while playing
@@ -82,7 +115,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: name.top
             anchors.bottomMargin: -6
-            text: qsTr("Agent locked in")
+            text: root.caption
             color: Valorant.white
             font: Tokens.font.label.large
         }
@@ -167,7 +200,7 @@ Item {
             duration: 200
         }
         PauseAnimation {
-            duration: 450 * Math.max(0.5, Valorant.fxIntensity)
+            duration: 450 * root.hold * Math.max(0.5, Valorant.fxIntensity)
         }
         NumberAnimation {
             target: banner

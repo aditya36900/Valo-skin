@@ -18,6 +18,7 @@ Singleton {
 
     property string uptime
     readonly property string user: Quickshell.env("USER")
+    property string realName // GECOS full name from /etc/passwd, if set
     readonly property string wm: Quickshell.env("XDG_CURRENT_DESKTOP") || Quickshell.env("XDG_SESSION_DESKTOP")
     readonly property string shell: Quickshell.env("SHELL").split("/").pop()
 
@@ -77,6 +78,15 @@ Singleton {
         }
 
         target: GlobalConfig.general
+    }
+
+    FileView {
+        path: "/etc/passwd"
+        printErrors: false
+        onLoaded: {
+            const line = text().split("\n").find(l => l.startsWith(`${root.user}:`));
+            root.realName = (line?.split(":")[4] ?? "").split(",")[0].trim();
+        }
     }
 
     FileView {

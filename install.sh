@@ -26,6 +26,7 @@ hypr_mode=auto
 assume_yes=0
 dry_run=0
 uninstall=0
+player_name=""
 
 usage() {
     cat <<'EOF'
@@ -36,11 +37,14 @@ Installs the Valo-skin shell and Valorant-themed dotfiles.
   --no-deps          Don't install packages
   --no-shell         Don't build/install the shell
   --no-dots          Don't install Hyprland/terminal/GTK/Qt/cursor theming
-  --sddm             Also install and enable the Valo-skin SDDM login theme (root)
+  --sddm             Also install the Valo-skin SDDM login theme and make SDDM your login
+                     manager (root; your previous one is restored by --uninstall)
   --firefox          Also theme Firefox/LibreWolf profiles with userChrome.css
   --dev              Also run the coding-tools installer (scripts/dev-tools.sh; --help there for modules)
   --plymouth         Also install and enable the Valo-skin Plymouth boot splash (root)
   --hypr=MODE        lua | conf | auto (default: detect hyprland.lua vs hyprland.conf)
+  --player=NAME      Your name for the lock screen, dashboard, welcome banner, login screen
+                     and boot splash (saved to valorant.json; default: your account's full name)
   -y, --yes          Don't ask for confirmation
   --dry-run          Print what would happen without changing anything
   --uninstall        Remove Valo-skin include lines, generated files and the cursor theme
@@ -60,6 +64,7 @@ for arg in "$@"; do
         --dev) do_dev=1 ;;
         --plymouth) do_plymouth=1 ;;
         --hypr=lua|--hypr=conf|--hypr=auto) hypr_mode="${arg#--hypr=}" ;;
+        --player=*) player_name="${arg#--player=}" ;;
         -y|--yes) assume_yes=1 ;;
         --dry-run) dry_run=1 ;;
         --uninstall) uninstall=1 ;;
@@ -267,6 +272,13 @@ PY
         run sudo rm -f /etc/sddm.conf.d/10-valo-skin.conf
         run sudo rm -rf /usr/share/sddm/themes/valo-skin
         say "removed SDDM theme"
+    fi
+    if [[ -f "${data_home}/valo-skin/dm-previous" ]]; then
+        prev_dm="$(cat "${data_home}/valo-skin/dm-previous")"
+        run sudo systemctl disable sddm.service
+        run sudo systemctl enable -f "${prev_dm}.service"
+        run rm -f -- "${data_home}/valo-skin/dm-previous"
+        say "Login manager restored to ${prev_dm} (after a reboot)"
     fi
     if [[ -d /usr/share/plymouth/themes/valo-skin ]]; then
         prev="$(cat "${data_home}/valo-skin/plymouth-previous" 2>/dev/null || echo bgrt)"
@@ -476,6 +488,42 @@ fi
 
 # ------------------------------------------------------------------ login + boot (opt-in)
 
+# Player name: --player, else valorant.json -> player.name, else the account's full name
+player_get() {
+    python3 - <<'PY' 2>/dev/null || true
+import json, os, pwd
+path = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"), "caelestia/valorant.json")
+name = ""
+try:
+    name = (json.load(open(path)).get("player") or {}).get("name", "").strip()
+except Exception:
+    pass
+if not name:
+    name = pwd.getpwuid(os.getuid()).pw_gecos.split(",")[0].strip()
+print(name)
+PY
+}
+
+player_save() {
+    (( dry_run )) && { printf '  %s[dry-run]%s save player.name = %s\n' "$dim" "$off" "$1"; return; }
+    python3 - "$1" <<'PY'
+import json, os, sys
+path = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"), "caelestia/valorant.json")
+os.makedirs(os.path.dirname(path), exist_ok=True)
+try:
+    data = json.load(open(path))
+except Exception:
+    data = {}
+data.setdefault("player", {})["name"] = sys.argv[1]
+with open(path, "w") as f:
+    json.dump(data, f, indent=4)
+    f.write("\n")
+PY
+}
+
+# Escapes a string for the right-hand side of a sed s||| expression
+sed_escape() { printf '%s' "$1" | sed -e 's/[\\|&]/\\&/g'; }
+
 scheme_get() {
     python3 - "$1" "$2" <<'PY' 2>/dev/null || echo "$2"
 import json, os, sys
@@ -489,12 +537,24 @@ except Exception:
 PY
 }
 
+if [[ -n "$player_name" ]]; then
+    step "Player"
+    player_save "$player_name"
+    say "player.name = ${player_name} (lock screen, dashboard, welcome banner)"
+fi
+player="${player_name:-$(player_get)}"
+
 if (( do_sddm )); then
     step "SDDM login theme"
     if (( do_deps )); then
         case "$distro" in
             arch) run sudo pacman -S --needed --noconfirm sddm qt6-svg qt6-declarative ;;
-            fedora) run sudo dnf install -y sddm qt6-qtsvg qt6-qtdeclarative ;;
+            fedora)
+                # Fedora 44 KDE ships Plasma's own login manager; SDDM needs a greeter
+                # compositor: KWin's if Plasma is installed, else the X11 one
+                run sudo dnf install -y sddm qt6-qtsvg qt6-qtdeclarative \
+                    && { run sudo dnf install -y sddm-wayland-plasma 2>/dev/null || run sudo dnf install -y sddm-x11 || true; }
+                ;;
         esac
     fi
     theme=/usr/share/sddm/themes/valo-skin
@@ -508,13 +568,30 @@ if (( do_sddm )); then
     run sudo cp "$wall" "${theme}/assets/background.webp"
     run sudo sed -i -e "s|^accent=.*|accent=$(scheme_get accent '#ff4655')|" \
         -e "s|^agentName=.*|agentName=$(scheme_get name Valorant)|" "${theme}/theme.conf"
+    if [[ -n "$player" ]]; then
+        run sudo sed -i -e "s|^playerUser=.*|playerUser=$(sed_escape "${USER:-$(id -un)}")|" \
+            -e "s|^playerName=.*|playerName=$(sed_escape "$player")|" \
+            -e "s|^headline=.*|headline=$(sed_escape "$player")|" "${theme}/theme.conf"
+    fi
     run sudo mkdir -p /etc/sddm.conf.d
     if (( ! dry_run )); then
         printf '[Theme]\nCurrent=valo-skin\n' | sudo tee /etc/sddm.conf.d/10-valo-skin.conf >/dev/null
     fi
     say "SDDM theme set (re-run with --sddm after switching agents to update its accent and wallpaper)"
-    command -v systemctl >/dev/null && ! systemctl is-enabled -q sddm 2>/dev/null \
-        && note "SDDM isn't enabled: sudo systemctl enable sddm (disable your current display manager first)"
+    # Make SDDM the login manager, remembering the previous one for --uninstall
+    if command -v systemctl >/dev/null; then
+        current_dm="$(basename "$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null)" .service)"
+        [[ "$current_dm" == display-manager ]] && current_dm="" # no login manager enabled
+        if [[ "$current_dm" != sddm ]]; then
+            if [[ -n "$current_dm" ]]; then
+                run mkdir -p "${data_home}/valo-skin"
+                (( dry_run )) || printf '%s\n' "$current_dm" > "${data_home}/valo-skin/dm-previous"
+                run sudo systemctl disable "${current_dm}.service"
+            fi
+            run sudo systemctl enable -f sddm.service
+            say "Login manager: ${current_dm:-none} -> sddm (takes effect after a reboot)"
+        fi
+    fi
 fi
 
 if (( do_plymouth )); then
@@ -533,6 +610,11 @@ if (( do_plymouth )); then
         fi
         run sudo mkdir -p /usr/share/plymouth/themes/valo-skin
         run sudo cp -r "${src}/themes/plymouth/valo-skin/." /usr/share/plymouth/themes/valo-skin/
+        if [[ -n "$player" ]]; then
+            ply_name="$(printf '%s' "$player" | tr '[:lower:]' '[:upper:]' | tr -d '"\\')"
+            run sudo sed -i "s|^player_name = \"\";|player_name = \"$(sed_escape "$ply_name")\";|" \
+                /usr/share/plymouth/themes/valo-skin/valo-skin.script
+        fi
         run sudo mkdir -p /usr/share/fonts/valo-skin
         run sudo cp "${src}/assets/fonts/Oswald-Variable.ttf" "${src}/assets/fonts/Barlow-Regular.ttf" /usr/share/fonts/valo-skin/
         if [[ "$distro" == fedora ]]; then
