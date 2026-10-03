@@ -40,14 +40,17 @@ arrive as kill banners tagged **Uplink** (calls in teal, pulsing).
 
 ## `taskbar`
 
-The bar's taskbar (on by default, replacing the old active-window title and bench) shows pinned apps
-and every open window, Windows style: click a window to focus it, click the active one to minimize
+The taskbar is a dock on the right screen edge by default: it gets the full screen height, reserves
+its width so windows tile beside it, and hides with the bar when a window goes fullscreen. Set
+`position` to `"bar"` to put it back inside the left bar instead. It shows pinned apps and every open
+window (anything on a hidden special workspace counts as minimized), Windows style: click a window to focus it, click the active one to minimize
 it, click a dimmed (minimized) one to restore it. Middle-click closes, right-click pins/unpins, hover
 shows a live preview with Minimize/Restore, New window, Pin and Close. The strip at the end is
 "show desktop". `Alt+Tab` / `Alt+Shift+Tab` cycle windows.
 
 | Key | Type | Default | Description |
 |---|---|---|---|
+| `position` | string | `"right"` | `"right"`: its own dock on the right edge; `"bar"`: inside the left bar |
 | `pinned` | string[] | `[]` | Desktop entry ids kept on the taskbar (right-click a tile to add/remove) |
 | `allWorkspaces` | bool | `true` | List windows from every workspace (`false`: only the current one) |
 

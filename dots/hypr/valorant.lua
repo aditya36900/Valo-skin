@@ -134,11 +134,13 @@ hl.layer_rule({ name = "valo-drawers-noanim", match = { namespace = "caelestia-d
 
 -- Multitasking like Plasma: windows that ask for attention (dialogs, links opened from other apps)
 -- get focus, modal dialogs float centred, and password prompts always take the keyboard
-hl.config({ misc = { focus_on_activate = true } })
+-- (on_focus_under_fullscreen = 2: focusing a window under a fullscreen/maximized one un-maximizes
+-- that one instead of leaving the new window drawn on top but unclickable)
+hl.config({ misc = { focus_on_activate = true, on_focus_under_fullscreen = 2 } })
 hl.window_rule({ name = "valo-modal", match = { modal = true }, float = true, center = true })
 hl.window_rule({
     name = "valo-polkit",
-    match = { class = "^(org.kde.polkit-kde-authentication-agent-1|polkit-kde-authentication-agent-1|hyprpolkitagent|lxqt-policykit-agent|polkit-gnome-authentication-agent-1|gcr-prompter|org.kde.ksecretd|pinentry-qt|pinentry-gtk.*)$" },
+    match = { class = "^(org.kde.polkit-kde-authentication-agent-1|polkit-kde-authentication-agent-1|hyprpolkitagent|lxqt-policykit-agent|polkit-gnome-authentication-agent-1|gcr-prompter|pinentry-qt|pinentry-gtk.*)$" },
     float = true,
     center = true,
     pin = true,
@@ -148,7 +150,7 @@ hl.window_rule({
 -- Floating pickers and dialogs get the accent border too, centred
 hl.window_rule({
     name = "valo-dialogs",
-    match = { class = "^(xdg-desktop-portal-gtk|org.gnome.FileRoller|pavucontrol|org.pulseaudio.pavucontrol)$" },
+    match = { class = "^(org.kde.ksecretd|xdg-desktop-portal-gtk|org.gnome.FileRoller|pavucontrol|org.pulseaudio.pavucontrol)$" },
     float = true,
     center = true,
 })

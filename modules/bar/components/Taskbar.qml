@@ -18,7 +18,7 @@ import qs.utils
 Item {
     id: root
 
-    readonly property real tileSize: Tokens.sizes.bar.innerWidth - Tokens.padding.small
+    property real tileSize: Tokens.sizes.bar.innerWidth - Tokens.padding.small
     readonly property real stripHeight: desktopStrip.visible ? desktopStrip.height + Tokens.spacing.small : 0
 
     // The tile under a y coordinate in this item's space, for the bar's hover popout

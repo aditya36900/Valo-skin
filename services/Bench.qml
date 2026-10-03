@@ -33,11 +33,28 @@ Singleton {
             minimize(t.address);
     }
 
+    // Hyprland keeps routing clicks to a fullscreen/maximized window even when a floating window is
+    // raised over it, so the window looks active but can't be used. Before bringing a window
+    // forward, drop that state from the others on the workspace, like Plasma does.
+    function clearFullscreen(wsId: int, except: string): void {
+        for (const t of Hypr.toplevels.values) {
+            if (t.address === except || t.workspace?.id !== wsId || !(t.lastIpcObject?.fullscreen > 0))
+                continue;
+            if (Hypr.usingLua) {
+                Hypr.dispatch(`hl.dsp.window.fullscreen_state({ internal = 0, client = 0, window = "address:0x${t.address}" })`);
+            } else {
+                Hypr.dispatch(`focuswindow address:0x${t.address}`);
+                Hypr.dispatch("fullscreenstate 0 0");
+            }
+        }
+    }
+
     function restore(toplevel: var): void {
         if (!toplevel)
             return;
         const ws = Hypr.activeWsId;
         order = order.filter(a => a !== toplevel.address);
+        clearFullscreen(ws, toplevel.address);
         // follow = true also focuses it
         Hypr.dispatch(Hypr.usingLua ? `hl.dsp.window.move({ window = "address:0x${toplevel.address}", workspace = "${ws}", follow = true })` : `movetoworkspace ${ws},address:0x${toplevel.address}`);
     }

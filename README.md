@@ -52,7 +52,7 @@ switch at any time.
 | **App themes that follow the agent**: btop, Neovim, VS Code / VSCodium / Cursor, JupyterLab, Firefox userChrome (`--firefox`), Vesktop/Vencord, Spicetify | ✅ |
 | **Loadout launcher**: the app launcher as a Valorant buy menu, apps in weapon classes, an Equipped row of your most-used apps | ✅ |
 | **Comms Wi-Fi panel**: every network in range in a scrollable list with All / Saved / Open / Locked filters, signal pips, band tags | ✅ |
-| **Windows-style taskbar** in the bar: pinned apps and every open window; click to focus, minimize or restore, middle-click to close, right-click to pin, live preview on hover, show-desktop strip, `Alt+Tab` | ✅ |
+| **Windows-style taskbar** as a dock on the right edge (or in the bar): pinned apps and every open window; click to focus, minimize or restore, middle-click to close, right-click to pin, live preview on hover, show-desktop strip, `Alt+Tab` | ✅ |
 | **Plasma-like multitasking**: dialogs and password prompts get focus, modal windows float centred | ✅ |
 | **Auto-tiling + layout switch** (`SUPER+ALT+T`): dwindle / master / scrolling, shown in the bar | ✅ |
 | **Agent portraits** on the wallpaper and login screen, downloaded on your machine with `valo-agent-art` / `--agent-art` (not shipped) | ✅ |

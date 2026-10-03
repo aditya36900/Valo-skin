@@ -87,7 +87,12 @@ Singleton {
         else if (item.active)
             Bench.minimize(item.address);
         else
-            dispatchWindow('hl.dsp.focus({ window = "%a" })', "focuswindow %a", item.address);
+            focus(item);
+    }
+
+    function focus(item: var): void {
+        Bench.clearFullscreen(item.workspace, item.address);
+        dispatchWindow('hl.dsp.focus({ window = "%a" })', "focuswindow %a", item.address);
     }
 
     function close(item: var): void {
@@ -113,8 +118,7 @@ Singleton {
         if (list.length === 0)
             return;
         const i = list.findIndex(w => w.active);
-        const next = list[((i < 0 ? 0 : i + step) % list.length + list.length) % list.length];
-        dispatchWindow('hl.dsp.focus({ window = "%a" })', "focuswindow %a", next.address);
+        focus(list[((i < 0 ? 0 : i + step) % list.length + list.length) % list.length]);
     }
 
     // Windows' "show desktop": minimize everything on this workspace, or bring it all back

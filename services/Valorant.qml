@@ -192,6 +192,8 @@ Singleton {
     readonly property bool agentWallpapers: cfg.agentWallpapers ?? true
     // Agent portraits over the wallpaper, once `valo-agent-art` has downloaded them
     readonly property bool agentArt: cfg.agentArt ?? true
+    // Where the taskbar lives: "right" (its own dock on the right edge, default) or "bar"
+    readonly property bool dockOn: (cfg.taskbar?.position ?? "right") === "right"
     readonly property string agentArtDir: `${Quickshell.env("XDG_DATA_HOME") || `${Quickshell.env("HOME")}/.local/share`}/valo-skin/agent-art`
     readonly property bool soundsEnabled: enabled && (cfg.sounds?.enabled ?? true)
     readonly property real soundVolume: Math.max(0, Math.min(1, cfg.sounds?.volume ?? 0.6))
@@ -468,6 +470,9 @@ Singleton {
                 insertAfter("layout", entry);
             out = out.filter(e => e.id !== "bench");
         }
+        // With the dock on the right edge the apps live there instead of in the bar
+        if (dockOn)
+            out = out.filter(e => e.id !== "taskbar");
         return out.filter(e => e.enabled);
     }
 
