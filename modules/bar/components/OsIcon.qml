@@ -2,6 +2,7 @@ import QtQuick
 import Caelestia.Config
 import qs.components
 import qs.components.effects
+import qs.components.valorant
 import qs.services
 import qs.utils
 
@@ -23,7 +24,15 @@ Item {
     Loader {
         asynchronous: true
         anchors.centerIn: parent
-        sourceComponent: SysInfo.isDefaultLogo ? caelestiaLogo : distroIcon
+        sourceComponent: Valorant.enabled ? emblem : SysInfo.isDefaultLogo ? caelestiaLogo : distroIcon
+    }
+
+    Component {
+        id: emblem
+
+        Emblem {
+            size: Math.round(Tokens.font.body.large.pointSize * 1.9)
+        }
     }
 
     Component {

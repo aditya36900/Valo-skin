@@ -7,6 +7,7 @@ import qs.components
 import qs.components.effects
 import qs.components.filedialog
 import qs.components.images
+import qs.components.valorant
 import qs.services
 import qs.utils
 
@@ -145,7 +146,16 @@ Item {
 
         Loader {
             anchors.centerIn: parent
-            sourceComponent: SysInfo.isDefaultLogo ? caelestiaLogo : osLogo
+            sourceComponent: Valorant.enabled ? emblem : SysInfo.isDefaultLogo ? caelestiaLogo : osLogo
+        }
+    }
+
+    Component {
+        id: emblem
+
+        Emblem {
+            size: Tokens.sizes.dashboard.logoSize
+            frameColor: Colours.palette.m3onPrimaryContainer
         }
     }
 

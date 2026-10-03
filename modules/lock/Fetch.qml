@@ -7,6 +7,7 @@ import Caelestia
 import Caelestia.Config
 import qs.components
 import qs.components.effects
+import qs.components.valorant
 import qs.services
 import qs.utils
 
@@ -63,7 +64,7 @@ StyledRect {
                 Layout.preferredHeight: 0
                 active: !iconLoader.active
 
-                sourceComponent: SysInfo.isDefaultLogo ? caelestiaLogo : distroIcon
+                sourceComponent: Valorant.enabled ? emblem : SysInfo.isDefaultLogo ? caelestiaLogo : distroIcon
             }
         }
 
@@ -78,7 +79,7 @@ StyledRect {
                 Layout.fillHeight: true
                 active: root.width > Tokens.sizes.lock.largeLogoWidth
 
-                sourceComponent: SysInfo.isDefaultLogo ? caelestiaLogo : distroIcon
+                sourceComponent: Valorant.enabled ? emblem : SysInfo.isDefaultLogo ? caelestiaLogo : distroIcon
             }
 
             ColumnLayout {
@@ -146,6 +147,14 @@ StyledRect {
                     }
                 }
             }
+        }
+    }
+
+    Component {
+        id: emblem
+
+        Emblem {
+            size: height
         }
     }
 

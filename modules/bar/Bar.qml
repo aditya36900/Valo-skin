@@ -138,6 +138,22 @@ ColumnLayout {
                 }
             }
             DelegateChoice {
+                roleValue: "layout"
+                delegate: EntryWrapper {
+                    LayoutIndicator {
+                        objectName: "taskbarLayout"
+                    }
+                }
+            }
+            DelegateChoice {
+                roleValue: "bench"
+                delegate: EntryWrapper {
+                    Bench {
+                        objectName: "taskbarBench"
+                    }
+                }
+            }
+            DelegateChoice {
                 roleValue: "activeWindow"
                 delegate: EntryWrapper {
                     ActiveWindow {

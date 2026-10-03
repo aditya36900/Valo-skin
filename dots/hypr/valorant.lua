@@ -29,7 +29,18 @@ hl.config({
             inactive_border = c.inactive_border,
         },
         resize_on_border = true,
-        layout = "dwindle",
+        layout = "dwindle", -- SUPER+ALT+T cycles dwindle / master / scrolling
+    },
+
+    -- Auto-tiling: new windows split the focused one along its longer side and keep the split
+    dwindle = {
+        preserve_split = true,
+        force_split = 2,
+    },
+
+    master = {
+        new_status = "master",
+        mfact = 0.55,
     },
 
     decoration = {
@@ -143,3 +154,7 @@ hl.bind("SUPER + ALT + V", hl.dsp.exec_cmd(valo .. "toggle")) -- Valorant palett
 hl.bind("SUPER + ALT + L", hl.dsp.exec_cmd(valo .. "mode light"))
 hl.bind("SUPER + ALT + D", hl.dsp.exec_cmd(valo .. "mode dark"))
 hl.bind("SUPER + ALT + S", hl.dsp.exec_cmd("valo-sync")) -- force-resync dotfile colours
+hl.bind("SUPER + ALT + T", hl.dsp.exec_cmd("qs -c caelestia ipc call layout next")) -- cycle tiling layout
+-- Hyprland has no minimize: park the window on the bench (special:minimized), call it back
+hl.bind("SUPER + ALT + M", hl.dsp.exec_cmd("qs -c caelestia ipc call bench minimize"))
+hl.bind("SUPER + ALT + SHIFT + M", hl.dsp.exec_cmd("qs -c caelestia ipc call bench restore"))
