@@ -22,6 +22,7 @@ small colour *include* files and reloads what it can. Your own config files are 
 | Firefox / LibreWolf / Zen (`--firefox`) | `<profile>/chrome/valorant-colors.css` + static `valorant.css` | `@import` in `userChrome.css`, pref in `user.js` | restart |
 | Vesktop / Vencord / Equibop | `~/.config/<client>/themes/valorant.theme.css` | enable it in Settings → Themes | automatic |
 | Spicetify | `~/.config/spicetify/Themes/Valorant/` (`color.ini` scheme `agent`) | `spicetify config current_theme Valorant` | `spicetify refresh -s` |
+| JupyterLab / Notebook 7 | `~/.jupyter/custom/custom.css` | `c.LabApp.custom_css = True` (set by `dev-tools.sh --only jupyter`) | reload the page |
 
 App themes are only generated when the app is installed (Firefox only for profiles you opt in
 with `--firefox`). Editors, btop and the Firefox userChrome all get sharp, chamfer-style corners

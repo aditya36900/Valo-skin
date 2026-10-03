@@ -20,6 +20,7 @@ do_shell=1
 do_dots=1
 do_sddm=0
 do_firefox=0
+do_dev=0
 do_plymouth=0
 hypr_mode=auto
 assume_yes=0
@@ -37,6 +38,7 @@ Installs the Valo-skin shell and Valorant-themed dotfiles.
   --no-dots          Don't install Hyprland/terminal/GTK/Qt/cursor theming
   --sddm             Also install and enable the Valo-skin SDDM login theme (root)
   --firefox          Also theme Firefox/LibreWolf profiles with userChrome.css
+  --dev              Also run the coding-tools installer (scripts/dev-tools.sh; --help there for modules)
   --plymouth         Also install and enable the Valo-skin Plymouth boot splash (root)
   --hypr=MODE        lua | conf | auto (default: detect hyprland.lua vs hyprland.conf)
   -y, --yes          Don't ask for confirmation
@@ -55,6 +57,7 @@ for arg in "$@"; do
         --no-dots) do_dots=0 ;;
         --sddm) do_sddm=1 ;;
         --firefox) do_firefox=1 ;;
+        --dev) do_dev=1 ;;
         --plymouth) do_plymouth=1 ;;
         --hypr=lua|--hypr=conf|--hypr=auto) hypr_mode="${arg#--hypr=}" ;;
         -y|--yes) assume_yes=1 ;;
@@ -327,7 +330,7 @@ if (( do_shell )); then
             -DCMAKE_INSTALL_PREFIX=/ -DINSTALL_QSCONFDIR="$qs_dir" -DENABLE_MODULES="$modules"
         run cmake --build "${src}/build"
         run sudo cmake --install "${src}/build"
-        [[ -d "$qs_dir" ]] && run sudo chown -R "$USER" "$qs_dir"
+        [[ -d "$qs_dir" ]] && run sudo chown -R "${USER:-$(id -un)}" "$qs_dir"
     fi
 fi
 
@@ -546,6 +549,14 @@ if (( do_plymouth )); then
     else
         say "plymouth-set-default-theme not found; install Plymouth first."
     fi
+fi
+
+if (( do_dev )); then
+    step "Coding tools"
+    dev_args=()
+    (( assume_yes )) && dev_args+=(-y)
+    (( dry_run )) && dev_args+=(--dry-run)
+    bash "${src}/scripts/dev-tools.sh" "${dev_args[@]}" || say "Some coding tools failed; re-run scripts/dev-tools.sh"
 fi
 
 step "Done"

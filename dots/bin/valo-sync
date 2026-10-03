@@ -6,7 +6,7 @@ Reads the scheme the shell publishes to ~/.local/state/caelestia/valorant-scheme
 
   Hyprland (Lua + hyprlang), kitty, foot, alacritty, fastfetch, GTK 3/4, qt5ct/qt6ct,
   the Valo-Crosshair cursor accent, and (when installed) btop, Neovim, VS Code / VSCodium,
-  Firefox (opted-in profiles), Vesktop / Vencord and Spicetify.
+  Firefox (opted-in profiles), Vesktop / Vencord, Spicetify and JupyterLab.
 
 Each target only gets a small *include* file; your own configs are never rewritten
 (install.sh adds the one include line per app). Files are only touched when their
@@ -32,7 +32,7 @@ SCHEME_FILE = XDG_STATE / "caelestia" / "valorant-scheme.json"
 SHARE_DIR = XDG_DATA / "valo-skin"
 
 TARGETS = ["hypr", "kitty", "foot", "alacritty", "fastfetch", "gtk", "qt", "cursor",
-           "btop", "nvim", "vscode", "firefox", "discord", "spicetify"]
+           "btop", "nvim", "vscode", "firefox", "discord", "spicetify", "jupyter"]
 
 # ---------------------------------------------------------------- colour maths
 
@@ -574,11 +574,64 @@ def render_spicetify(p):
     return {base / "Themes/Valorant/color.ini": ini, base / "Themes/Valorant/user.css": css}
 
 
+def render_jupyter(p):
+    if not (have("jupyter", "jupyter-lab") or (HOME / ".jupyter").exists()):
+        return {}
+    c = p.h
+    v = {
+        "--jp-layout-color0": c("background"), "--jp-layout-color1": c("surfaceContainerLow"),
+        "--jp-layout-color2": c("surfaceContainer"), "--jp-layout-color3": c("surfaceContainerHigh"),
+        "--jp-layout-color4": c("surfaceContainerHighest"),
+        "--jp-ui-font-color0": c("onSurface"), "--jp-ui-font-color1": c("onSurface"),
+        "--jp-ui-font-color2": c("onSurfaceVariant"), "--jp-ui-font-color3": c("outline"),
+        "--jp-content-font-color0": c("onSurface"), "--jp-content-font-color1": c("onSurface"),
+        "--jp-content-font-color2": c("onSurfaceVariant"), "--jp-content-font-color3": c("outline"),
+        "--jp-brand-color0": c("primary"), "--jp-brand-color1": c("primary"),
+        "--jp-brand-color2": c("primaryContainer"), "--jp-brand-color3": c("primaryContainer"),
+        "--jp-accent-color0": c("primary"), "--jp-accent-color1": c("primary"),
+        "--jp-accent-color2": c("primaryContainer"), "--jp-accent-color3": c("primaryContainer"),
+        "--jp-warn-color0": c("tertiary"), "--jp-warn-color1": c("tertiary"),
+        "--jp-error-color0": c("error"), "--jp-error-color1": c("error"),
+        "--jp-success-color0": c("success"), "--jp-success-color1": c("success"),
+        "--jp-border-color0": c("outlineVariant"), "--jp-border-color1": c("outlineVariant"),
+        "--jp-border-color2": c("outlineVariant"), "--jp-border-color3": c("outline"),
+        "--jp-cell-editor-background": c("surfaceContainerLow"), "--jp-cell-editor-border-color": c("outlineVariant"),
+        "--jp-cell-editor-active-background": c("surfaceContainer"),
+        "--jp-cell-prompt-not-active-font-color": c("outline"), "--jp-cell-inprompt-font-color": c("primary"),
+        "--jp-cell-outprompt-font-color": c("term1"), "--jp-notebook-multiselected-color": c("primaryContainer"),
+        "--jp-rendermime-error-background": c("errorContainer"), "--jp-input-active-border-color": c("primary"),
+        "--jp-mirror-editor-keyword-color": c("term1"), "--jp-mirror-editor-variable-color": c("onSurface"),
+        "--jp-mirror-editor-string-color": c("success"), "--jp-mirror-editor-number-color": c("tertiary"),
+        "--jp-mirror-editor-comment-color": c("outline"), "--jp-mirror-editor-def-color": c("primary"),
+        "--jp-mirror-editor-builtin-color": c("term6"), "--jp-mirror-editor-operator-color": c("onSurfaceVariant"),
+        "--jp-mirror-editor-meta-color": c("term5"), "--jp-mirror-editor-attribute-color": c("onSurfaceVariant"),
+        "--jp-mirror-editor-property-color": c("onSurfaceVariant"), "--jp-mirror-editor-header-color": c("primary"),
+        "--jp-accept-color-normal": c("primary"), "--jp-accept-color-hover": c("primary"),
+        "--jp-accept-color-active": c("primary"), "--jp-reject-color-normal": c("term1"),
+        "--jp-reject-color-hover": c("term1"), "--jp-warn-color-normal": c("tertiary"),
+        "--jp-ui-font-family": '"Barlow", system-ui, sans-serif',
+    }
+    css = header(p, "/*").rstrip() + " */\n/* Loaded by JupyterLab/Notebook 7 with c.LabApp.custom_css = True */\n" \
+        ":root, body[data-jp-theme-light], body[data-jp-theme-light='false'] {\n" \
+        + "".join(f"  {k}: {val} !important;\n" for k, val in v.items()) + "}\n" + f"""
+/* Sharp HUD corners and an accent strip on the active cell */
+.jp-Cell, .jp-InputArea-editor, .jp-OutputArea-output, .jp-Button, .jp-Dialog-content,
+.lm-Menu, .jp-InputGroup input {{ border-radius: 0 !important; }}
+.jp-InputArea-editor {{ clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }}
+.jp-Notebook .jp-Cell.jp-mod-active .jp-Collapser {{ background: {c("primary")} !important; }}
+.lm-TabBar-tab.lm-mod-current {{ box-shadow: inset 0 2px 0 {c("primary")} !important; }}
+.jp-InputPrompt, .jp-OutputPrompt, .lm-TabBar-tabLabel, .jp-DirListing-headerItemText {{
+  text-transform: uppercase; letter-spacing: 0.06em;
+}}
+"""
+    return {HOME / ".jupyter/custom/custom.css": css}
+
+
 RENDERERS = {
     "hypr": render_hypr, "kitty": render_kitty, "foot": render_foot, "alacritty": render_alacritty,
     "fastfetch": render_fastfetch, "gtk": render_gtk, "qt": render_qt, "cursor": render_cursor,
     "btop": render_btop, "nvim": render_nvim, "vscode": render_vscode, "firefox": render_firefox,
-    "discord": render_discord, "spicetify": render_spicetify,
+    "discord": render_discord, "spicetify": render_spicetify, "jupyter": render_jupyter,
 }
 
 # ---------------------------------------------------------------- reloads

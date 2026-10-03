@@ -48,7 +48,8 @@ switch at any time.
 | **Agent quick-switch ring** (`SUPER+ALT+A`): agents grouped by role around the screen, keyboard and mouse | ✅ |
 | **Leave match** session menu, **contract-tier** media progress, **match history** notification sidebar | ✅ |
 | **SDDM login theme** (main-menu style, spike-defuse password) and **Plymouth boot splash** (`--sddm`, `--plymouth`) | ✅ |
-| **App themes that follow the agent**: btop, Neovim, VS Code / VSCodium / Cursor, Firefox userChrome (`--firefox`), Vesktop/Vencord, Spicetify | ✅ |
+| **App themes that follow the agent**: btop, Neovim, VS Code / VSCodium / Cursor, JupyterLab, Firefox userChrome (`--firefox`), Vesktop/Vencord, Spicetify | ✅ |
+| **Coding-tools installer** (`--dev`): VS Code + extensions, JupyterLab + data-science kernel, Python/uv, Node, Rust, Go, Java, C/C++, Docker/Podman, databases, cloud CLIs, JetBrains Toolbox ([docs](docs/DEV-TOOLS.md)) | ✅ |
 
 ## Previews
 
@@ -93,7 +94,7 @@ The installer:
 3. installs `valo-sync`, the fonts and the Valo-Crosshair cursor;
 4. adds one tagged include line each to your Hyprland, kitty, foot and GTK configs (with backups).
 
-Flags: `--no-deps`, `--no-shell`, `--no-dots`, `--hypr=lua|conf`, `--sddm`, `--plymouth`, `--firefox`, `-y`,
+Flags: `--no-deps`, `--no-shell`, `--no-dots`, `--hypr=lua|conf`, `--sddm`, `--plymouth`, `--firefox`, `--dev`, `-y`,
 `--uninstall`.
 See [docs/DOTFILES.md](docs/DOTFILES.md) for exactly what changes.
 
