@@ -1,7 +1,6 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import QtQuick.Window
 import Quickshell
 import Quickshell.Widgets
 import Caelestia.Config
@@ -14,10 +13,13 @@ import qs.utils
 //   click: focus a window / minimize the active one / restore a minimized one / launch a pin
 //   middle-click: close   right-click: pin or unpin   hover: live preview popout
 // A "show desktop" strip sits at the end, like Windows.
-Column {
+// The bar gives it whatever height is left after every other entry; when there are more windows
+// than fit, the tiles scroll instead of pushing the clock and status icons off screen.
+Item {
     id: root
 
     readonly property real tileSize: Tokens.sizes.bar.innerWidth - Tokens.padding.small
+    readonly property real stripHeight: desktopStrip.visible ? desktopStrip.height + Tokens.spacing.small : 0
 
     // The tile under a y coordinate in this item's space, for the bar's hover popout
     function tileAt(y: real): var {
@@ -29,17 +31,18 @@ Column {
         } : null;
     }
 
-    spacing: Tokens.spacing.small
+    implicitWidth: root.tileSize
+    implicitHeight: tiles.implicitHeight + stripHeight
 
     // A plain Column + Repeater (not a ListView): every tile always exists, so the list can't get
     // stuck showing only the tiles that fit while it was momentarily empty during a model update
     Flickable {
         id: scroller
 
+        anchors.top: parent.top
         anchors.horizontalCenter: parent.horizontalCenter
         width: root.tileSize
-        implicitHeight: Math.min(tiles.implicitHeight, Screen.height > 0 ? Screen.height * 0.45 : tiles.implicitHeight)
-        height: implicitHeight
+        height: Math.max(0, Math.min(tiles.implicitHeight, root.height - root.stripHeight))
         contentHeight: tiles.implicitHeight
         clip: true
         boundsBehavior: Flickable.StopAtBounds
@@ -127,6 +130,10 @@ Column {
 
     // Show desktop
     Item {
+        id: desktopStrip
+
+        anchors.top: scroller.bottom
+        anchors.topMargin: Tokens.spacing.small
         anchors.horizontalCenter: parent.horizontalCenter
         width: root.tileSize
         height: 10

@@ -149,9 +149,15 @@ ColumnLayout {
             }
             DelegateChoice {
                 roleValue: "taskbar"
+                // Takes the space left over (down to one tile) and scrolls past that
                 delegate: EntryWrapper {
+                    Layout.fillHeight: true
+                    Layout.minimumHeight: Tokens.sizes.bar.innerWidth
+                    Layout.maximumHeight: implicitHeight
+
                     Taskbar {
                         objectName: "taskbarWindows"
+                        height: parent.height
                     }
                 }
             }

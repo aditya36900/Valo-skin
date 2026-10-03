@@ -18,31 +18,30 @@ Singleton {
     // Windows minimized by "show desktop", restored by the next click
     property var shownDesktop: []
 
-    // Running windows in a stable order (workspace, then when they opened)
+    // Running windows in a stable order (workspace, then when they opened). Anything parked on a
+    // hidden special workspace counts as minimized, whoever put it there (SUPER+N, an app's own
+    // minimize button, a titlebar plugin, a scratchpad), so nothing open ever goes missing.
     readonly property var windows: {
         const visibleSpecials = Hypr.monitors.values.map(m => m.lastIpcObject?.specialWorkspace?.name ?? "");
         const active = Hyprland.activeToplevel;
-        return Hypr.toplevels.values.filter(t => t.lastIpcObject?.class || t.title).filter(t => {
+        return Hypr.toplevels.values.filter(t => t.lastIpcObject?.mapped !== false).filter(t => {
             const ws = t.workspace?.name ?? "";
-            if (ws.startsWith("special:") && ws !== Bench.workspace && visibleSpecials.includes(ws))
-                return true; // an open scratchpad
-            if (ws.startsWith("special:"))
-                return ws === Bench.workspace; // minimized
-            return root.allWorkspaces || t.workspace?.id === Hypr.activeWsId;
+            return ws.startsWith("special:") || root.allWorkspaces || t.workspace?.id === Hypr.activeWsId;
         }).map(t => {
             const ws = t.workspace?.name ?? "";
-            const minimized = ws === Bench.workspace;
+            const minimized = ws.startsWith("special:") && !visibleSpecials.includes(ws);
+            const appClass = t.lastIpcObject?.class || t.lastIpcObject?.initialClass || t.wayland?.appId || "";
             return {
                 toplevel: t,
                 address: t.address,
-                appClass: t.lastIpcObject?.class ?? "",
-                title: t.title,
+                appClass: appClass,
+                title: t.title || t.lastIpcObject?.initialTitle || appClass,
                 minimized: minimized,
                 active: !minimized && t === active,
                 workspace: t.workspace?.id ?? 0,
-                entry: DesktopEntries.heuristicLookup(t.lastIpcObject?.class ?? "")
+                entry: DesktopEntries.heuristicLookup(appClass)
             };
-        }).sort((a, b) => (a.workspace < 0) - (b.workspace < 0) || a.workspace - b.workspace); // specials (minimized) last
+        }).sort((a, b) => a.minimized - b.minimized || (a.workspace < 0) - (b.workspace < 0) || a.workspace - b.workspace); // minimized last
     }
 
     // Pinned apps first (each followed by its windows), then other running apps, like Windows
@@ -141,6 +140,23 @@ Singleton {
 
     // Fill in window classes (icons, pin ids) right away instead of on the next window event
     Component.onCompleted: Hyprland.refreshToplevels()
+
+    // New and moved windows only get their class/workspace once the toplevel list is re-read
+    Connections {
+        function onRawEvent(event: HyprlandEvent): void {
+            if (["openwindow", "closewindow", "movewindow", "movewindowv2", "windowtitlev2", "minimized", "changefloatingmode"].includes(event.name))
+                refresh.restart();
+        }
+
+        target: Hyprland
+    }
+
+    Timer {
+        id: refresh
+
+        interval: 150
+        onTriggered: Hyprland.refreshToplevels()
+    }
 
     IpcHandler {
         function next(): void {
