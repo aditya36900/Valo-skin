@@ -17,6 +17,7 @@ Scope {
         // Valo-skin: background watchers and IPC targets (keybinds) must exist from login
         Bench;
         TaskbarState;
+        Stacking;
         Layouts;
         Stash;
         NightOps;
