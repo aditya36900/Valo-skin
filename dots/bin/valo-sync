@@ -4,8 +4,9 @@
 Reads the scheme the shell publishes to ~/.local/state/caelestia/valorant-scheme.json
 (falls back to computing the default Valorant scheme) and writes colour files for:
 
-  Hyprland (Lua + hyprlang), kitty, foot, alacritty, fastfetch, GTK 3/4, qt5ct/qt6ct
-  and the Valo-Crosshair cursor theme accent.
+  Hyprland (Lua + hyprlang), kitty, foot, alacritty, fastfetch, GTK 3/4, qt5ct/qt6ct,
+  the Valo-Crosshair cursor accent, and (when installed) btop, Neovim, VS Code / VSCodium,
+  Firefox (opted-in profiles), Vesktop / Vencord and Spicetify.
 
 Each target only gets a small *include* file; your own configs are never rewritten
 (install.sh adds the one include line per app). Files are only touched when their
@@ -30,7 +31,8 @@ XDG_DATA = Path(os.environ.get("XDG_DATA_HOME") or HOME / ".local/share")
 SCHEME_FILE = XDG_STATE / "caelestia" / "valorant-scheme.json"
 SHARE_DIR = XDG_DATA / "valo-skin"
 
-TARGETS = ["hypr", "kitty", "foot", "alacritty", "fastfetch", "gtk", "qt", "cursor"]
+TARGETS = ["hypr", "kitty", "foot", "alacritty", "fastfetch", "gtk", "qt", "cursor",
+           "btop", "nvim", "vscode", "firefox", "discord", "spicetify"]
 
 # ---------------------------------------------------------------- colour maths
 
@@ -292,9 +294,291 @@ def render_cursor(p):
     return {SHARE_DIR / "cursor-accent": p.primary + "\n"}
 
 
+def have(*cmds):
+    return any(shutil.which(c) for c in cmds)
+
+
+def render_btop(p):
+    if not (have("btop") or (XDG_CONFIG / "btop").exists()):
+        return {}
+    c = p.h
+    keys = {
+        "main_bg": c("background"), "main_fg": c("onSurface"), "title": c("onSurface"), "hi_fg": c("primary"),
+        "selected_bg": c("primaryContainer"), "selected_fg": c("onPrimaryContainer"), "inactive_fg": c("outline"),
+        "graph_text": c("onSurfaceVariant"), "meter_bg": c("surfaceContainerHigh"), "proc_misc": c("primary"),
+        "cpu_box": c("primary"), "mem_box": c("term1"), "net_box": c("success"), "proc_box": c("outline"),
+        "div_line": c("outlineVariant"),
+        "temp_start": c("success"), "temp_mid": c("tertiary"), "temp_end": c("term1"),
+        "cpu_start": c("primary"), "cpu_mid": c("tertiary"), "cpu_end": c("term1"),
+        "free_start": c("success"), "free_mid": c("success"), "free_end": c("term10"),
+        "cached_start": c("term4"), "cached_mid": c("term4"), "cached_end": c("term12"),
+        "available_start": c("tertiary"), "available_mid": c("tertiary"), "available_end": c("term11"),
+        "used_start": c("term1"), "used_mid": c("term1"), "used_end": c("term9"),
+        "download_start": c("primary"), "download_mid": c("primary"), "download_end": c("onSurface"),
+        "upload_start": c("term1"), "upload_mid": c("term1"), "upload_end": c("onSurface"),
+        "process_start": c("primary"), "process_mid": c("tertiary"), "process_end": c("term1"),
+    }
+    body = header(p) + "".join(f'theme[{k}]="{v}"\n' for k, v in keys.items())
+    return {XDG_CONFIG / "btop/themes/valorant.theme": body}
+
+
+def render_nvim(p):
+    if not have("nvim"):
+        return {}
+    c = p.h
+    groups = {
+        "Normal": {"fg": c("onSurface"), "bg": c("background")},
+        "NormalFloat": {"fg": c("onSurface"), "bg": c("surfaceContainer")},
+        "FloatBorder": {"fg": c("primary"), "bg": c("surfaceContainer")},
+        "FloatTitle": {"fg": c("primary"), "bg": c("surfaceContainer"), "bold": True},
+        "Cursor": {"fg": c("background"), "bg": c("primary")},
+        "CursorLine": {"bg": c("surfaceContainerLow")},
+        "CursorColumn": {"bg": c("surfaceContainerLow")},
+        "ColorColumn": {"bg": c("surfaceContainerLow")},
+        "Visual": {"bg": c("primaryContainer")},
+        "LineNr": {"fg": c("outline")},
+        "CursorLineNr": {"fg": c("primary"), "bold": True},
+        "SignColumn": {"bg": c("background")},
+        "WinSeparator": {"fg": c("outlineVariant")},
+        "StatusLine": {"fg": c("onSurface"), "bg": c("surfaceContainerHigh")},
+        "StatusLineNC": {"fg": c("outline"), "bg": c("surfaceContainer")},
+        "TabLine": {"fg": c("outline"), "bg": c("surfaceContainer")},
+        "TabLineSel": {"fg": c("onPrimary"), "bg": c("primary"), "bold": True},
+        "TabLineFill": {"bg": c("background")},
+        "Pmenu": {"fg": c("onSurface"), "bg": c("surfaceContainer")},
+        "PmenuSel": {"fg": c("onPrimary"), "bg": c("primary")},
+        "PmenuSbar": {"bg": c("surfaceContainerHigh")},
+        "PmenuThumb": {"bg": c("outline")},
+        "Search": {"fg": c("background"), "bg": c("tertiary")},
+        "IncSearch": {"fg": c("background"), "bg": c("term1")},
+        "CurSearch": {"fg": c("background"), "bg": c("term1")},
+        "MatchParen": {"fg": c("primary"), "bold": True, "underline": True},
+        "Title": {"fg": c("primary"), "bold": True},
+        "Directory": {"fg": c("primary")},
+        "NonText": {"fg": c("outlineVariant")},
+        "Whitespace": {"fg": c("outlineVariant")},
+        "Comment": {"fg": c("outline"), "italic": True},
+        "Constant": {"fg": c("tertiary")},
+        "String": {"fg": c("success")},
+        "Character": {"fg": c("success")},
+        "Number": {"fg": c("tertiary")},
+        "Boolean": {"fg": c("tertiary"), "bold": True},
+        "Identifier": {"fg": c("onSurface")},
+        "Function": {"fg": c("primary")},
+        "Statement": {"fg": c("term1")},
+        "Keyword": {"fg": c("term1"), "bold": True},
+        "Operator": {"fg": c("onSurfaceVariant")},
+        "PreProc": {"fg": c("term5")},
+        "Type": {"fg": c("term6")},
+        "Special": {"fg": c("term5")},
+        "Delimiter": {"fg": c("onSurfaceVariant")},
+        "Todo": {"fg": c("background"), "bg": c("tertiary"), "bold": True},
+        "Error": {"fg": c("error")},
+        "ErrorMsg": {"fg": c("error"), "bold": True},
+        "WarningMsg": {"fg": c("tertiary")},
+        "DiagnosticError": {"fg": c("error")},
+        "DiagnosticWarn": {"fg": c("tertiary")},
+        "DiagnosticInfo": {"fg": c("term4")},
+        "DiagnosticHint": {"fg": c("success")},
+        "DiagnosticUnderlineError": {"sp": c("error"), "undercurl": True},
+        "DiagnosticUnderlineWarn": {"sp": c("tertiary"), "undercurl": True},
+        "DiffAdd": {"bg": c("successContainer") if "successContainer" in p.c else c("surfaceContainerHigh")},
+        "DiffChange": {"bg": c("surfaceContainerHigh")},
+        "DiffDelete": {"fg": c("term1"), "bg": c("errorContainer")},
+        "DiffText": {"bg": c("primaryContainer")},
+        "@variable": {"link": "Identifier"},
+        "@keyword": {"link": "Keyword"},
+        "@function": {"link": "Function"},
+        "@function.builtin": {"fg": c("primary"), "italic": True},
+        "@type": {"link": "Type"},
+        "@string": {"link": "String"},
+        "@comment": {"link": "Comment"},
+        "@property": {"fg": c("onSurfaceVariant")},
+        "@punctuation": {"link": "Delimiter"},
+    }
+
+    def lua(v):
+        if isinstance(v, bool):
+            return "true" if v else "false"
+        return f'"{v}"'
+    lines = [header(p, "--").rstrip(),
+             "-- Enable with :colorscheme valorant (valo-sync re-applies it live on agent switch)",
+             "vim.cmd('highlight clear')", "if vim.fn.exists('syntax_on') == 1 then vim.cmd('syntax reset') end",
+             "vim.o.termguicolors = true", f"vim.o.background = '{'light' if p.light else 'dark'}'",
+             "vim.g.colors_name = 'valorant'", "local hl = function(g, o) vim.api.nvim_set_hl(0, g, o) end"]
+    for g, o in groups.items():
+        lines.append(f'hl("{g}", {{ ' + ", ".join(f"{k} = {lua(v)}" for k, v in o.items()) + " })")
+    for i in range(16):
+        lines.append(f'vim.g.terminal_color_{i} = "#{p.term(i)}"')
+    return {XDG_CONFIG / "nvim/colors/valorant.lua": "\n".join(lines) + "\n"}
+
+
+VSCODE_EXT = "valo-skin.valorant-theme-1.0.0"
+
+
+def render_vscode(p):
+    # Extensions dir per editor, detected by either the extensions home or the config dir
+    editors = {".vscode": ["Code"], ".vscode-oss": ["Code - OSS", "VSCodium"], ".vscode-insiders": ["Code - Insiders"],
+               ".cursor": ["Cursor"], ".windsurf": ["Windsurf"]}
+    roots = [HOME / d / "extensions" for d, cfgs in editors.items()
+             if (HOME / d).exists() or any((XDG_CONFIG / c).exists() for c in cfgs)]
+    if not roots and have("code", "codium", "code-oss"):
+        roots = [HOME / ".vscode" / "extensions"]
+    if not roots:
+        return {}
+    c = p.h
+    colors = {
+        "focusBorder": c("primary"), "foreground": c("onSurface"), "descriptionForeground": c("onSurfaceVariant"),
+        "errorForeground": c("error"), "selection.background": c("primaryContainer"),
+        "editor.background": c("background"), "editor.foreground": c("onSurface"),
+        "editor.lineHighlightBackground": c("surfaceContainerLow"),
+        "editor.selectionBackground": c("primaryContainer"), "editor.findMatchBackground": c("tertiary") + "66",
+        "editorCursor.foreground": c("primary"), "editorLineNumber.foreground": c("outline"),
+        "editorLineNumber.activeForeground": c("primary"), "editorIndentGuide.background1": c("outlineVariant"),
+        "editorBracketMatch.border": c("primary"), "editorWidget.background": c("surfaceContainer"),
+        "editorWidget.border": c("outlineVariant"), "editorSuggestWidget.selectedBackground": c("primaryContainer"),
+        "editorGroupHeader.tabsBackground": c("background"), "editorGroup.border": c("outlineVariant"),
+        "tab.activeBackground": c("surfaceContainer"), "tab.activeForeground": c("onSurface"),
+        "tab.activeBorderTop": c("primary"), "tab.inactiveBackground": c("background"),
+        "tab.inactiveForeground": c("outline"), "tab.border": c("background"),
+        "activityBar.background": c("background"), "activityBar.foreground": c("onSurface"),
+        "activityBar.inactiveForeground": c("outline"), "activityBar.activeBorder": c("primary"),
+        "activityBarBadge.background": c("term1"), "activityBarBadge.foreground": c("onSurface"),
+        "sideBar.background": c("surfaceContainerLow"), "sideBar.foreground": c("onSurfaceVariant"),
+        "sideBar.border": c("outlineVariant"), "sideBarSectionHeader.background": c("surfaceContainer"),
+        "sideBarTitle.foreground": c("onSurface"), "list.activeSelectionBackground": c("primaryContainer"),
+        "list.activeSelectionForeground": c("onPrimaryContainer"), "list.hoverBackground": c("surfaceContainer"),
+        "list.highlightForeground": c("primary"), "statusBar.background": c("surfaceContainer"),
+        "statusBar.foreground": c("onSurfaceVariant"), "statusBar.border": c("primary"),
+        "statusBarItem.remoteBackground": c("term1"), "statusBarItem.remoteForeground": c("onSurface"),
+        "titleBar.activeBackground": c("background"), "titleBar.activeForeground": c("onSurface"),
+        "panel.background": c("background"), "panel.border": c("outlineVariant"),
+        "panelTitle.activeBorder": c("primary"), "terminal.background": c("background"),
+        "terminal.foreground": c("onSurface"), "terminalCursor.foreground": c("primary"),
+        "button.background": c("primary"), "button.foreground": c("onPrimary"),
+        "button.secondaryBackground": c("surfaceContainerHigh"), "input.background": c("surfaceContainer"),
+        "input.border": c("outlineVariant"), "badge.background": c("primary"), "badge.foreground": c("onPrimary"),
+        "progressBar.background": c("primary"), "scrollbarSlider.background": c("outline") + "55",
+        "notifications.background": c("surfaceContainer"), "notificationsErrorIcon.foreground": c("error"),
+        "gitDecoration.addedResourceForeground": c("success"), "gitDecoration.modifiedResourceForeground": c("tertiary"),
+        "gitDecoration.deletedResourceForeground": c("term1"),
+    }
+    names = ["Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan", "White"]
+    for i, n in enumerate(names):
+        colors[f"terminal.ansi{n}"] = "#" + p.term(i)
+        colors[f"terminal.ansiBright{n}"] = "#" + p.term(i + 8)
+
+    def tok(scope, fg, style=None):
+        s = {"foreground": fg}
+        if style:
+            s["fontStyle"] = style
+        return {"scope": scope, "settings": s}
+    tokens = [
+        tok(["comment", "punctuation.definition.comment"], c("outline"), "italic"),
+        tok(["string", "string.quoted"], c("success")),
+        tok(["constant.numeric", "constant.language", "constant.character"], c("tertiary")),
+        tok(["keyword", "storage", "storage.type", "keyword.control"], c("term1"), "bold"),
+        tok(["keyword.operator", "punctuation"], c("onSurfaceVariant")),
+        tok(["entity.name.function", "support.function", "meta.function-call"], c("primary")),
+        tok(["entity.name.type", "entity.name.class", "support.type", "support.class"], c("term6")),
+        tok(["variable", "meta.definition.variable"], c("onSurface")),
+        tok(["variable.parameter"], c("onSurfaceVariant"), "italic"),
+        tok(["entity.other.attribute-name", "meta.object-literal.key"], c("onSurfaceVariant")),
+        tok(["entity.name.tag"], c("term1")),
+        tok(["meta.decorator", "entity.name.function.decorator", "keyword.other.special-method"], c("term5")),
+        tok(["markup.heading"], c("primary"), "bold"),
+        tok(["markup.inserted"], c("success")), tok(["markup.deleted"], c("term1")),
+        tok(["invalid"], c("error")),
+    ]
+    theme = {"name": "Valorant (Valo-skin)", "type": "light" if p.light else "dark",
+             "semanticHighlighting": True, "colors": colors, "tokenColors": tokens}
+    pkg = {
+        "name": "valorant-theme", "displayName": "Valorant (Valo-skin)", "publisher": "valo-skin",
+        "version": "1.0.0", "description": "Generated by valo-sync for the current Valo-skin agent",
+        "engines": {"vscode": "^1.70.0"}, "categories": ["Themes"],
+        "contributes": {"themes": [{"label": "Valorant (Valo-skin)", "uiTheme": "vs" if p.light else "vs-dark",
+                                    "path": "./themes/valorant-color-theme.json"}]},
+    }
+    out = {}
+    for root in roots:
+        out[root / VSCODE_EXT / "package.json"] = json.dumps(pkg, indent=2) + "\n"
+        out[root / VSCODE_EXT / "themes/valorant-color-theme.json"] = json.dumps(theme, indent=2) + "\n"
+    return out
+
+
+def firefox_profiles():
+    """Profiles opted in by install.sh --firefox (they contain chrome/.valo-skin)."""
+    out = []
+    for base in (HOME / ".mozilla/firefox", HOME / ".librewolf", HOME / ".zen"):
+        if base.exists():
+            out += [d for d in base.iterdir() if (d / "chrome" / ".valo-skin").exists()]
+    return out
+
+
+def render_firefox(p):
+    profiles = firefox_profiles()
+    if not profiles:
+        return {}
+    c = p.h
+    css = header(p, "/*").rstrip() + " */\n:root {\n" + "".join(f"  --valo-{k}: {v};\n" for k, v in {
+        "bg": c("background"), "surface": c("surfaceContainer"), "surface-high": c("surfaceContainerHigh"),
+        "fg": c("onSurface"), "muted": c("outline"), "border": c("outlineVariant"), "accent": c("primary"),
+        "on-accent": c("onPrimary"), "red": c("term1"),
+    }.items()) + "}\n"
+    return {d / "chrome/valorant-colors.css": css for d in profiles}
+
+
+def render_discord(p):
+    dirs = [XDG_CONFIG / d / "themes" for d in ("vesktop", "Vencord", "equibop") if (XDG_CONFIG / d).exists()]
+    if not dirs:
+        return {}
+    c = p.h
+    vars_ = {
+        # Legacy and visual-refresh variable names
+        "--background-primary": c("background"), "--background-secondary": c("surfaceContainerLow"),
+        "--background-secondary-alt": c("surfaceContainer"), "--background-tertiary": c("surfaceContainerLow"),
+        "--background-floating": c("surfaceContainerHigh"), "--background-accent": c("primary"),
+        "--background-base-lowest": c("surfaceContainerLow"), "--background-base-lower": c("background"),
+        "--background-base-low": c("surfaceContainerLow"), "--background-surface-high": c("surfaceContainerHigh"),
+        "--background-modifier-hover": c("surfaceContainer"), "--background-modifier-selected": c("primaryContainer"),
+        "--channeltextarea-background": c("surfaceContainer"), "--chat-background-default": c("background"),
+        "--text-normal": c("onSurface"), "--text-default": c("onSurface"), "--text-muted": c("outline"),
+        "--header-primary": c("onSurface"), "--header-secondary": c("onSurfaceVariant"),
+        "--interactive-normal": c("onSurfaceVariant"), "--interactive-hover": c("onSurface"),
+        "--interactive-active": c("primary"), "--text-link": c("primary"), "--brand-500": c("primary"),
+        "--brand-experiment": c("primary"), "--border-subtle": c("outlineVariant"), "--status-danger": c("term1"),
+        "--status-positive": c("success"), "--status-warning": c("tertiary"),
+    }
+    css = ("/**\n * @name Valorant (Valo-skin)\n * @description Generated by valo-sync for the current agent\n"
+           " * @author Valo-skin\n * @version 1.0.0\n */\n"
+           ":root, .theme-dark, .theme-light, .visual-refresh {\n" + "".join(f"  {k}: {v} !important;\n" for k, v in vars_.items())
+           + "}\n/* Sharp HUD corners */\n[class*='message'], [class*='button'], [class*='modal'], [class*='popout'] { border-radius: 0 !important; }\n")
+    return {d / "valorant.theme.css": css for d in dirs}
+
+
+def render_spicetify(p):
+    base = XDG_CONFIG / "spicetify"
+    if not base.exists():
+        return {}
+    k = {
+        "text": p.onSurface, "subtext": p.onSurfaceVariant, "main": p.background, "main-elevated": p.surfaceContainer,
+        "sidebar": p.surfaceContainerLow, "player": p.surfaceContainerLow, "card": p.surfaceContainer,
+        "shadow": "000000", "selected-row": p.onSurfaceVariant, "button": p.primary, "button-active": p.primary,
+        "button-disabled": p.outline, "tab-active": p.surfaceContainerHigh, "notification": p.primary,
+        "notification-error": p.term1, "misc": p.outline, "highlight": p.surfaceContainerHigh,
+        "highlight-elevated": p.surfaceContainerHighest,
+    }
+    ini = header(p, ";") + "[agent]\n" + "".join(f"{key:<20}= {v}\n" for key, v in k.items())
+    css = header(p, "/*").rstrip() + " */\n* { border-radius: 0 !important; }\n" \
+        ".main-nowPlayingBar-container { border-top: 2px solid var(--spice-button) !important; }\n"
+    return {base / "Themes/Valorant/color.ini": ini, base / "Themes/Valorant/user.css": css}
+
+
 RENDERERS = {
     "hypr": render_hypr, "kitty": render_kitty, "foot": render_foot, "alacritty": render_alacritty,
     "fastfetch": render_fastfetch, "gtk": render_gtk, "qt": render_qt, "cursor": render_cursor,
+    "btop": render_btop, "nvim": render_nvim, "vscode": render_vscode, "firefox": render_firefox,
+    "discord": render_discord, "spicetify": render_spicetify,
 }
 
 # ---------------------------------------------------------------- reloads
@@ -314,6 +598,17 @@ def reload(changed):
         run(["pkill", "-USR1", "-x", "kitty"])  # kitty reloads its config on SIGUSR1
     if "foot" in changed and shutil.which("pkill"):
         run(["pkill", "-USR1", "-x", "foot"])  # foot >= 1.15 switches/reloads colours on SIGUSR1
+    if "btop" in changed and shutil.which("pkill"):
+        run(["pkill", "-USR2", "-x", "btop"])  # btop reloads its config/theme on SIGUSR2
+    if "nvim" in changed:
+        runtime = Path(os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}")
+        for sock in list(runtime.glob("nvim.*.0")) + list(Path("/tmp").glob("nvim.*/0")):
+            run(["nvim", "--server", str(sock), "--remote-expr",
+                 "execute('if get(g:, \"colors_name\", \"\") ==# \"valorant\" | colorscheme valorant | endif')"])
+    if "spicetify" in changed and shutil.which("spicetify"):
+        cfg = XDG_CONFIG / "spicetify/config-xpui.ini"
+        if cfg.exists() and "current_theme = Valorant" in cfg.read_text():
+            run(["spicetify", "refresh", "-s"])
     if "cursor" in changed:
         gen = Path(__file__).with_name("valo-cursors")
         if gen.exists():

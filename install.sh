@@ -19,6 +19,7 @@ do_deps=1
 do_shell=1
 do_dots=1
 do_sddm=0
+do_firefox=0
 do_plymouth=0
 hypr_mode=auto
 assume_yes=0
@@ -35,6 +36,7 @@ Installs the Valo-skin shell and Valorant-themed dotfiles.
   --no-shell         Don't build/install the shell
   --no-dots          Don't install Hyprland/terminal/GTK/Qt/cursor theming
   --sddm             Also install and enable the Valo-skin SDDM login theme (root)
+  --firefox          Also theme Firefox/LibreWolf profiles with userChrome.css
   --plymouth         Also install and enable the Valo-skin Plymouth boot splash (root)
   --hypr=MODE        lua | conf | auto (default: detect hyprland.lua vs hyprland.conf)
   -y, --yes          Don't ask for confirmation
@@ -52,6 +54,7 @@ for arg in "$@"; do
         --no-shell) do_shell=0 ;;
         --no-dots) do_dots=0 ;;
         --sddm) do_sddm=1 ;;
+        --firefox) do_firefox=1 ;;
         --plymouth) do_plymouth=1 ;;
         --hypr=lua|--hypr=conf|--hypr=auto) hypr_mode="${arg#--hypr=}" ;;
         -y|--yes) assume_yes=1 ;;
@@ -193,6 +196,20 @@ if (( uninstall )); then
              "${config_home}/gtk-3.0/gtk.css" "${config_home}/gtk-4.0/gtk.css"; do
         remove_tagged "$f"
     done
+    for prof in "${HOME}"/.mozilla/firefox/*/ "${HOME}"/.librewolf/*/ "${HOME}"/.zen/*/; do
+        [[ -e "${prof}chrome/.valo-skin" ]] || continue
+        remove_tagged "${prof}chrome/userChrome.css"
+        remove_tagged "${prof}user.js"
+        run rm -f -- "${prof}chrome/.valo-skin" "${prof}chrome/valorant.css" "${prof}chrome/valorant-colors.css"
+    done
+    for d in .vscode .vscode-oss .vscode-insiders .cursor .windsurf; do
+        run rm -rf -- "${HOME}/${d}/extensions/valo-skin.valorant-theme-1.0.0"
+    done
+    run rm -rf -- "${config_home}/spicetify/Themes/Valorant"
+    for f in btop/themes/valorant.theme nvim/colors/valorant.lua vesktop/themes/valorant.theme.css \
+             Vencord/themes/valorant.theme.css equibop/themes/valorant.theme.css; do
+        [[ -e "${config_home}/${f}" ]] && run rm -f -- "${config_home}/${f}"
+    done
     for f in hypr/valorant.lua hypr/valorant.conf hypr/valorant-colors.lua hypr/valorant-colors.conf \
              kitty/valorant.conf foot/valorant.ini alacritty/valorant.toml fastfetch/valorant.jsonc \
              gtk-3.0/valorant.css gtk-4.0/valorant.css qt5ct/colors/valorant.conf qt6ct/colors/valorant.conf; do
@@ -217,8 +234,31 @@ if (( uninstall )); then
             say "cleaned ${conf/#${HOME}/\~}"
         fi
     done
-    for d in alacritty fastfetch foot gtk-3.0 gtk-4.0 qt5ct/colors qt6ct/colors; do
+    if grep -q '^color_theme = "valorant"' "${config_home}/btop/btop.conf" 2>/dev/null; then
+        backup "${config_home}/btop/btop.conf"
+        run sed -i 's|^color_theme = "valorant"|color_theme = "Default"|' "${config_home}/btop/btop.conf"
+    fi
+    for d in Code "Code - OSS" VSCodium Cursor; do
+        settings="${config_home}/${d}/User/settings.json"
+        grep -q "Valorant (Valo-skin)" "$settings" 2>/dev/null || continue
+        backup "$settings"
+        (( dry_run )) || python3 - "$settings" <<'PY' || true
+import json, sys
+path = sys.argv[1]
+data = json.load(open(path))
+if data.get("workbench.colorTheme") == "Valorant (Valo-skin)":
+    del data["workbench.colorTheme"]
+json.dump(data, open(path, "w"), indent=4)
+open(path, "a").write("\n")
+PY
+        say "cleaned ${d} settings"
+    done
+    for d in alacritty fastfetch foot gtk-3.0 gtk-4.0 qt5ct/colors qt6ct/colors btop/themes nvim/colors nvim kitty hypr \
+             vesktop/themes Vencord/themes; do
         [[ -d "${config_home}/${d}" ]] && run rmdir --ignore-fail-on-non-empty -- "${config_home}/${d}"
+    done
+    for prof in "${HOME}"/.mozilla/firefox/*/ "${HOME}"/.librewolf/*/ "${HOME}"/.zen/*/; do
+        [[ -d "${prof}chrome" ]] && run rmdir --ignore-fail-on-non-empty -- "${prof}chrome"
     done
     if [[ -f /etc/sddm.conf.d/10-valo-skin.conf ]]; then
         run sudo rm -f /etc/sddm.conf.d/10-valo-skin.conf
@@ -356,6 +396,70 @@ if (( do_dots )); then
         ini_set "${config_home}/${ct}/${ct}.conf" Appearance color_scheme_path "${config_home}/${ct}/colors/valorant.conf"
     done
     say "qt5ct/qt6ct use the Valorant palette"
+
+    step "Apps"
+    # btop: select the generated theme
+    if [[ -f "${config_home}/btop/btop.conf" ]]; then
+        backup "${config_home}/btop/btop.conf"
+        run sed -i 's|^color_theme = .*|color_theme = "valorant"|' "${config_home}/btop/btop.conf"
+        say "btop uses the Valorant theme"
+    fi
+    # VS Code family: set the colour theme when settings.json is plain JSON (left alone if it has comments)
+    for d in Code "Code - OSS" VSCodium Cursor; do
+        settings="${config_home}/${d}/User/settings.json"
+        [[ -d "${config_home}/${d}" ]] || continue
+        backup "$settings"
+        if (( ! dry_run )) && python3 - "$settings" <<'PY'
+import json, os, sys
+path = sys.argv[1]
+data = {}
+if os.path.exists(path):
+    try:
+        data = json.load(open(path))
+    except ValueError:
+        sys.exit(1)  # JSONC with comments: don't touch
+data["workbench.colorTheme"] = "Valorant (Valo-skin)"
+os.makedirs(os.path.dirname(path), exist_ok=True)
+json.dump(data, open(path, "w"), indent=4)
+PY
+        then
+            say "${d}: colour theme set to Valorant (Valo-skin)"
+        else
+            note "${d}: pick \"Valorant (Valo-skin)\" in Preferences → Color Theme"
+        fi
+    done
+    command -v nvim >/dev/null && note "Neovim: add  vim.cmd.colorscheme('valorant')  to your config"
+    for d in vesktop Vencord equibop; do
+        [[ -d "${config_home}/${d}" ]] && note "${d}: enable valorant.theme.css in Settings → Themes"
+    done
+    if command -v spicetify >/dev/null; then
+        run spicetify config current_theme Valorant color_scheme agent
+        run spicetify apply || note "spicetify apply failed; run it manually after spicetify backup"
+    fi
+
+    if (( do_firefox )); then
+        step "Firefox"
+        found=0
+        for base in "${HOME}/.mozilla/firefox" "${HOME}/.librewolf" "${HOME}/.zen"; do
+            [[ -f "${base}/profiles.ini" ]] || continue
+            while IFS= read -r rel; do
+                prof="${base}/${rel}"
+                [[ -d "$prof" ]] || continue
+                found=1
+                run mkdir -p "${prof}/chrome"
+                run touch "${prof}/chrome/.valo-skin"
+                run install -m 0644 "${src}/dots/firefox/valorant.css" "${prof}/chrome/valorant.css"
+                ADD_LINE_PREPEND=1 add_line "${prof}/chrome/userChrome.css" '@import "valorant-colors.css"; @import "valorant.css";' "/*" " */"
+                add_line "${prof}/user.js" 'user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);' "//"
+            done < <(sed -n 's/^Path=//p' "${base}/profiles.ini")
+        done
+        if (( found )); then
+            run python3 "${bin_dir}/valo-sync" --only firefox --quiet || true
+            say "Firefox profiles themed (restart Firefox)"
+        else
+            say "No Firefox/LibreWolf/Zen profiles found"
+        fi
+    fi
 
     if command -v gsettings >/dev/null; then
         run gsettings set org.gnome.desktop.interface cursor-theme Valo-Crosshair 2>/dev/null || true

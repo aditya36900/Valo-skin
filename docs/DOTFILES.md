@@ -16,6 +16,16 @@ small colour *include* files and reloads what it can. Your own config files are 
 | GTK 3 / 4 (libadwaita, adw-gtk3) | `~/.config/gtk-{3,4}.0/valorant.css` | `@import 'valorant.css';` at the top of `gtk.css` | restart the app |
 | Qt (qt5ct / qt6ct) | `~/.config/qt{5,6}ct/colors/valorant.conf` | `custom_palette` + `color_scheme_path` in `qt{5,6}ct.conf` | restart the app |
 | Cursor | `~/.local/share/icons/Valo-Crosshair` (rebuilt in your accent) | `XCURSOR_THEME`, `~/.icons/default`, gsettings | new windows |
+| btop | `~/.config/btop/themes/valorant.theme` | `color_theme = "valorant"` set in `btop.conf` | SIGUSR2 |
+| Neovim | `~/.config/nvim/colors/valorant.lua` (no plugins needed) | `vim.cmd.colorscheme('valorant')` in your config | re-applied over RPC in running instances |
+| VS Code / VSCodium / Cursor | `~/.vscode*/extensions/valo-skin.valorant-theme-1.0.0` | `workbench.colorTheme` set if `settings.json` has no comments | Reload Window |
+| Firefox / LibreWolf / Zen (`--firefox`) | `<profile>/chrome/valorant-colors.css` + static `valorant.css` | `@import` in `userChrome.css`, pref in `user.js` | restart |
+| Vesktop / Vencord / Equibop | `~/.config/<client>/themes/valorant.theme.css` | enable it in Settings → Themes | automatic |
+| Spicetify | `~/.config/spicetify/Themes/Valorant/` (`color.ini` scheme `agent`) | `spicetify config current_theme Valorant` | `spicetify refresh -s` |
+
+App themes are only generated when the app is installed (Firefox only for profiles you opt in
+with `--firefox`). Editors, btop and the Firefox userChrome all get sharp, chamfer-style corners
+where the app allows it.
 
 Every line the installer adds ends with a `valo-skin` tag, so `./install.sh --uninstall` can find
 and remove it. It backs up every file it touches to `~/.local/share/valo-skin/backups/<date>/`.
