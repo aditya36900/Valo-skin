@@ -36,6 +36,7 @@ public:
     int m_hasInverted = 0;
     float m_invertedRadius = 0;
     float m_chamfer = 0;
+    float m_scanlines = 0;
     float m_invertedOuter[4] = {};
     float m_invertedInner[4] = {};
     BlobRectData m_rects[16] = {};

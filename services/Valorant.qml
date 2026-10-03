@@ -185,6 +185,7 @@ Singleton {
     readonly property real fxIntensity: Math.max(0, Math.min(2, cfg.fx?.intensity ?? 1))
     readonly property bool glitch: (cfg.fx?.glitch ?? true) && fxIntensity > 0
     readonly property bool scanlines: cfg.fx?.scanlines ?? false
+    readonly property real scanlineStrength: enabled && scanlines ? 0.12 * Math.min(1.5, fxIntensity) : 0
 
     readonly property var hud: ({
             roundTimerClock: cfg.hud?.roundTimerClock ?? true,
@@ -192,6 +193,7 @@ Singleton {
             rankWorkspaces: cfg.hud?.rankWorkspaces ?? true,
             killBanners: cfg.hud?.killBanners ?? true,
             chargeOsd: cfg.hud?.chargeOsd ?? true,
+            matchStats: cfg.hud?.matchStats ?? true,
             spikeLock: cfg.hud?.spikeLock ?? true,
             agentSelectLauncher: cfg.hud?.agentSelectLauncher ?? true
         })
@@ -229,6 +231,7 @@ Singleton {
                 rankWorkspaces: true,
                 killBanners: true,
                 chargeOsd: true,
+                matchStats: true,
                 spikeLock: true,
                 agentSelectLauncher: true
             }
@@ -236,6 +239,8 @@ Singleton {
 
     // Emitted whenever anything that affects the generated colour scheme changes
     signal schemeInputsChanged
+    // Emitted when an agent is picked interactively (launcher, settings, IPC), not on config load
+    signal agentLockedIn(agentId: string)
 
     // Whether a redesigned HUD component should replace the stock one
     function hudOn(key: string): bool {
@@ -388,6 +393,7 @@ Singleton {
         if (!agents.hasOwnProperty(id))
             return false;
         set("agent", id);
+        agentLockedIn(id);
         return true;
     }
 

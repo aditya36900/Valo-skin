@@ -44,6 +44,14 @@ void BlobGroup::setChamfer(bool c) {
     markDirty();
 }
 
+void BlobGroup::setScanlines(qreal s) {
+    if (qFuzzyCompare(m_scanlines + 1.0, s + 1.0))
+        return;
+    m_scanlines = s;
+    emit scanlinesChanged();
+    markDirty();
+}
+
 void BlobGroup::addShape(BlobShape* shape) {
     if (!shape || m_shapes.contains(shape))
         return;

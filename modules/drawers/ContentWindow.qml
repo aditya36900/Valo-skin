@@ -10,6 +10,7 @@ import Caelestia.Blobs
 import Caelestia.Config
 import qs.components
 import qs.components.containers
+import qs.components.valorant
 import qs.services
 import qs.modules.bar
 
@@ -163,6 +164,7 @@ StyledWindow {
             color: root.surfaceColour
             smoothing: Math.max(1, root.contentItem.Config.border.smoothing)
             chamfer: Valorant.chamferPanels
+            scanlines: Valorant.scanlineStrength
         }
 
         BlobInvertedRect {
@@ -310,6 +312,13 @@ StyledWindow {
 
             fullscreen: root.hasFullscreen
         }
+    }
+
+    Loader {
+        anchors.fill: parent
+        active: Valorant.enabled
+
+        sourceComponent: GlitchOverlay {}
     }
 
     ShellState.ComponentRef {

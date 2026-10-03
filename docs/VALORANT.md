@@ -39,9 +39,9 @@ by luminance for contrast.
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `chamfer` | int (px) | `10` | Bevel size for panels (dashboard, launcher, sidebar, popouts, settings). Small blobs use half. `0` turns chamfer mode off, so panels use `appearance.rounding` instead. |
-| `cornerBrackets` | bool | `true` | HUD corner brackets around the spike-lock defuse bar (more surfaces in Phase 3). |
+| `cornerBrackets` | bool | `true` | HUD corner brackets on the spike-lock defuse bar and match-stats cards. |
 | `accentBar` | bool | `true` | Urgency-coloured stripe on kill-banner notifications. |
-| `borderWidth` | int (px) | `1` | Reserved for HUD frame outlines *(Phase 3)*. |
+| `borderWidth` | int (px) | `1` | Outline width of match-stats cards (`0` for none). |
 
 The screen-frame bevel is `border.rounding` in `shell.json` (default `18`). How sharp the bevels
 are where panels meet the frame is `border.smoothing` (default `12`; lower is tighter).
@@ -50,9 +50,9 @@ are where panels meet the frame is `border.smoothing` (default `12`; lower is ti
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `intensity` | 0–2 | `1` | HUD effect strength: spike pulse, failed-defuse shake and kill-banner flash (flash brightness scales up to 1). `0` turns them all off. |
-| `glitch` | bool | `true` | Reserved: glitch transition on agent switch *(Phase 3)*. |
-| `scanlines` | bool | `false` | Reserved: scanline overlay on panels *(Phase 3)*. |
+| `intensity` | 0–2 | `1` | HUD effect strength: spike pulse, failed-defuse shake, kill-banner flash, lock-in glitch and scanline depth. `0` turns them all off. |
+| `glitch` | bool | `true` | Glitch flourish with an "Agent locked in" banner when you switch agents (launcher, settings or IPC; editing the file doesn't trigger it). |
+| `scanlines` | bool | `false` | Scanline texture on the SDF panels, aligned across every panel. |
 
 ## `hud`
 
@@ -67,7 +67,8 @@ They all also require `enabled: true`.
 | `killBanners` | Notification popups as kill-feed banners (accent: red = critical, agent colour = normal, grey = low) |
 | `chargeOsd` | Volume/mic/brightness sliders as ability charge meters; turn gold at 100% |
 | `spikeLock` | Lock screen password input as a spike defuse bar |
-| `agentSelectLauncher` | Agent-select grid in the launcher *(Phase 3)* |
+| `agentSelectLauncher` | `>agent` launcher mode (and the **Agent** action) |
+| `matchStats` | Dashboard and performance cards as HUD-framed match stats; CPU/GPU load as a rank tier |
 
 ## Agents
 
@@ -103,6 +104,11 @@ They all also require `enabled: true`.
 | `yoru` | Duelist | `#2b6cff` |
 
 Accents are hand-picked approximations, not official values.
+
+## Settings
+
+Everything above (except `palette` and `accent`) can also be changed in
+**Settings → Wallpaper & style → Valorant**: click an agent tile to lock it in.
 
 ## IPC
 

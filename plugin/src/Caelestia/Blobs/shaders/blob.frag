@@ -17,6 +17,7 @@ layout(std140, binding = 0) uniform buf {
     int hasInverted;
     float invertedRadius;
     float chamfer;
+    float scanlines;
     vec4 invertedOuter;
     vec4 invertedInner;
     vec4 rectData[80];
@@ -300,5 +301,11 @@ void main() {
 
     float fw = fwidth(mergedSdf);
     float alpha = 1.0 - smoothstep(-fw, fw, mergedSdf);
-    fragColor = vec4(color.rgb * alpha, alpha) * qt_Opacity;
+    vec3 rgb = color.rgb;
+    if (scanlines > 0.0) {
+        // Darken one row in three, in scene space so lines line up across every shape
+        float row = step(mod(floor(pixel.y), 3.0), 0.5);
+        rgb *= 1.0 - scanlines * row;
+    }
+    fragColor = vec4(rgb * alpha, alpha) * qt_Opacity;
 }

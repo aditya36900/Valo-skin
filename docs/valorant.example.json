@@ -30,6 +30,7 @@
         "killBanners": true,
         "chargeOsd": true,
         "spikeLock": true,
-        "agentSelectLauncher": true
+        "agentSelectLauncher": true,
+        "matchStats": true
     }
 }

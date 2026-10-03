@@ -16,6 +16,8 @@ class BlobGroup : public QObject {
     Q_PROPERTY(bool cornerFill READ cornerFill WRITE setCornerFill NOTIFY cornerFillChanged)
     // Chamfer mode: corner radii become 45-degree bevels and blends become chamfers
     Q_PROPERTY(bool chamfer READ chamfer WRITE setChamfer NOTIFY chamferChanged)
+    // Scanline overlay strength (0 = off), drawn in screen space so lines align across shapes
+    Q_PROPERTY(qreal scanlines READ scanlines WRITE setScanlines NOTIFY scanlinesChanged)
 
 public:
     explicit BlobGroup(QObject* parent = nullptr);
@@ -36,6 +38,10 @@ public:
     bool chamfer() const { return m_chamfer; }
 
     void setChamfer(bool c);
+
+    qreal scanlines() const { return m_scanlines; }
+
+    void setScanlines(qreal s);
 
     // A chamfer blend reaches further than a circular one (up to ~1.71x smoothing)
     qreal blendReach() const { return m_chamfer ? m_smoothing * 1.75 : m_smoothing; }
@@ -59,12 +65,14 @@ signals:
     void colorChanged();
     void cornerFillChanged();
     void chamferChanged();
+    void scanlinesChanged();
 
 private:
     qreal m_smoothing = 32.0;
     QColor m_color{ 0x44, 0x88, 0xff };
     bool m_cornerFill = true;
     bool m_chamfer = false;
+    qreal m_scanlines = 0;
     QList<BlobShape*> m_shapes;
     BlobInvertedRect* m_invertedRect = nullptr;
     bool m_physicsUpdated = false;

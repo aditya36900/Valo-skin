@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import M3Shapes
 import Caelestia.Config
 import qs.components
+import qs.components.valorant
 import qs.components.controls
 import qs.services
 
@@ -15,12 +16,31 @@ StyledRect {
     required property color accent
     required property real usage
     required property real temperature
+    readonly property bool matchStats: Valorant.hudOn("matchStats")
+    // Load shown as a Valorant rank tier
+    readonly property string tier: {
+        if (isNaN(usage))
+            return qsTr("Unranked");
+        const tiers = [qsTr("Iron"), qsTr("Bronze"), qsTr("Silver"), qsTr("Gold"), qsTr("Platinum"), qsTr("Diamond"), qsTr("Ascendant"), qsTr("Immortal"), qsTr("Radiant")];
+        return tiers[Math.min(tiers.length - 1, Math.floor(Math.max(0, usage) * tiers.length))];
+    }
 
-    color: Colours.tPalette.m3surfaceContainer
+    color: Valorant.hudOn("matchStats") ? "transparent" : Colours.tPalette.m3surfaceContainer
     radius: Tokens.rounding.extraLarge
 
     implicitWidth: Tokens.sizes.dashboard.perfHeroCardWidth
     implicitHeight: Math.max(tempProg.implicitHeight + detailsRow.implicitHeight + Tokens.spacing.large, usageShape.implicitHeight + usageLabel.implicitHeight) + Tokens.padding.large * 2
+
+    Loader {
+        anchors.fill: parent
+        z: -1
+        active: Valorant.hudOn("matchStats")
+
+        sourceComponent: HudCard {
+            color: Colours.tPalette.m3surfaceContainer
+            accent: root.accent
+        }
+    }
 
     CircularProgress {
         id: tempProg
@@ -114,6 +134,7 @@ StyledRect {
         anchors.margins: Tokens.padding.medium
 
         implicitSize: Tokens.sizes.dashboard.perfUsageShapeSize
+        visible: !root.matchStats
         color: Colours.palette.m3secondaryContainer
         shape: {
             if (root.usage >= 0.8)
@@ -143,6 +164,51 @@ StyledRect {
             text: isNaN(root.usage) ? "...%" : Math.round(root.usage * 100) + "%"
             color: root.accent
             font: Tokens.font.headline.builders.small.width(50).build()
+        }
+    }
+
+    // Match-stats block replacing the usage shape
+    Item {
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.margins: Tokens.padding.medium
+        implicitWidth: Tokens.sizes.dashboard.perfUsageShapeSize
+        implicitHeight: Tokens.sizes.dashboard.perfUsageShapeSize
+        visible: root.matchStats
+
+        ChamferRect {
+            anchors.fill: parent
+            color: Qt.alpha(root.accent, 0.12)
+            borderColor: Qt.alpha(root.accent, 0.6)
+            borderWidth: 1
+            topRight: 0
+            bottomLeft: 0
+        }
+
+        Column {
+            anchors.centerIn: parent
+            spacing: 0
+
+            StyledText {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("Load")
+                color: Colours.palette.m3onSurfaceVariant
+                font: Tokens.font.label.small
+            }
+
+            StyledText {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: isNaN(root.usage) ? "--" : Math.round(root.usage * 100) + "%"
+                color: root.accent
+                font: Tokens.font.headline.medium
+            }
+
+            StyledText {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: root.tier
+                color: root.usage >= 0.89 ? Valorant.gold : Colours.palette.m3onSurface
+                font: Tokens.font.label.medium
+            }
         }
     }
 }

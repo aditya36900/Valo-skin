@@ -4,6 +4,7 @@ import Quickshell
 import Caelestia.Config
 import Caelestia.Services
 import qs.components
+import qs.components.valorant
 import qs.components.controls
 import qs.services
 
@@ -13,11 +14,21 @@ StyledRect {
     readonly property color accent: Colours.palette.m3secondary
     readonly property real percentage: Storage.primaryDisk?.perc ?? 0
 
-    color: Colours.tPalette.m3surfaceContainer
+    color: Valorant.hudOn("matchStats") ? "transparent" : Colours.tPalette.m3surfaceContainer
     radius: Tokens.rounding.extraExtraLarge
 
     implicitWidth: layout.implicitWidth + layout.anchors.margins * 2
     implicitHeight: layout.implicitHeight + Tokens.padding.large * 2
+
+    Loader {
+        anchors.fill: parent
+        z: -1
+        active: Valorant.hudOn("matchStats")
+
+        sourceComponent: HudCard {
+            color: Colours.tPalette.m3surfaceContainer
+        }
+    }
 
     ServiceRef {
         service: Storage

@@ -3,17 +3,28 @@ import QtQuick.Layouts
 import Caelestia.Config
 import Caelestia.Internal
 import qs.components
+import qs.components.valorant
 import qs.components.misc
 import qs.services
 
 StyledRect {
     id: root
 
-    color: Colours.tPalette.m3surfaceContainer
+    color: Valorant.hudOn("matchStats") ? "transparent" : Colours.tPalette.m3surfaceContainer
     radius: Tokens.rounding.extraLarge
 
     implicitWidth: Tokens.sizes.dashboard.perfNetworkCardWidth
     implicitHeight: Tokens.sizes.dashboard.perfNetworkCardHeight
+
+    Loader {
+        anchors.fill: parent
+        z: -1
+        active: Valorant.hudOn("matchStats")
+
+        sourceComponent: HudCard {
+            color: Colours.tPalette.m3surfaceContainer
+        }
+    }
 
     Ref {
         service: NetworkUsage

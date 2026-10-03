@@ -75,7 +75,8 @@ bool BlobMaterialShader::updateUniformData(RenderState& state, QSGMaterial* newM
     // Chamfer flag (offset 120)
     memcpy(buf->data() + 120, &mat->m_chamfer, 4);
 
-    // Padding at 124-127 (skip)
+    // Scanline strength (offset 124)
+    memcpy(buf->data() + 124, &mat->m_scanlines, 4);
 
     // Inverted outer (offset 128, 16 bytes)
     memcpy(buf->data() + 128, mat->m_invertedOuter, 16);

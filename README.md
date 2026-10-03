@@ -34,7 +34,11 @@ switch at any time.
 | **Kill-banner notifications**: slanted chamfered cards with urgency-coloured stripe and arrival flash | ✅ |
 | **Ability-charge OSD**: volume, mic and brightness as stacked charge pips that turn gold at max | ✅ |
 | Every HUD piece can be turned off on its own in `valorant.json` → `hud` | ✅ |
-| Agent-select launcher, match-stats dashboard, agent picker in settings | 🔜 Phase 3 |
+| **Agent select**: `>agent` launcher mode with agent tiles, roles and a Locked in tag | ✅ |
+| **Match-stats dashboard**: HUD-framed cards; CPU/GPU load shown as a rank tier (Iron → Radiant) | ✅ |
+| **Settings page**: agent grid plus every Valorant option and HUD toggle under Wallpaper & style | ✅ |
+| **Lock-in glitch**: switching agents plays a glitch flourish with an "Agent locked in" banner | ✅ |
+| **Scanlines**: optional scanline texture on panels, drawn in the panel shader | ✅ |
 | Hyprland, terminal, fastfetch, GTK/Qt, cursor themes and a one-shot installer | 🔜 Phase 4 |
 
 ## Previews
@@ -44,6 +48,10 @@ Offscreen renders of the real components (stubbed system data):
 | Bar | Spike lock | OSD + kill banners |
 |---|---|---|
 | <img src="docs/previews/bar.png" width="180"> | <img src="docs/previews/spike-lock.png" width="320"> | <img src="docs/previews/osd-killbanners.png" width="380"> |
+
+| Agent select | Match stats | Settings | Lock-in glitch |
+|---|---|---|---|
+| <img src="docs/previews/agent-select.png" width="260"> | <img src="docs/previews/match-stats.png" width="380"> | <img src="docs/previews/settings-agents.png" width="300"> | <img src="docs/previews/lock-in-glitch.png" width="380"> |
 
 Chamfer-mode panel shader (navy = panels and screen frame):
 
@@ -118,7 +126,9 @@ qs -c caelestia ipc call valorant mode light
 qs -c caelestia ipc call valorant toggle         # Valorant palette <-> wallpaper scheme
 ```
 
-The launcher has **Next agent**, **Previous agent** and **Valorant palette** actions too. Picking
+In the launcher, type `>agent ` to search and lock in an agent, or use the **Next agent**,
+**Previous agent** and **Valorant palette** actions. Every option is also in
+**Settings → Wallpaper & style → Valorant**. Picking
 any scheme from the launcher's scheme list hands colours back to the wallpaper scheme. Run
 `valorant toggle` (or set `overrideScheme` back to `true`) to return.
 

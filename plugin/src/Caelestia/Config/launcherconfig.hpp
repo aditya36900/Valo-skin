@@ -68,6 +68,12 @@ class LauncherConfig : public ConfigObject {
                 { u"command"_s, QStringList{ u"autocomplete"_s, u"variant"_s } },
             }),
             vmap({
+                { u"name"_s, u"Agent"_s },
+                { u"icon"_s, u"person_pin"_s },
+                { u"description"_s, u"Select a Valorant agent theme"_s },
+                { u"command"_s, QStringList{ u"autocomplete"_s, u"agent"_s } },
+            }),
+            vmap({
                 { u"name"_s, u"Next agent"_s },
                 { u"icon"_s, u"skip_next"_s },
                 { u"description"_s, u"Lock in the next Valorant agent theme"_s },

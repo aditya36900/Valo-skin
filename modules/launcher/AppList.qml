@@ -29,7 +29,10 @@ StyledListView {
     function stateForText(text: string): string {
         const prefix = GlobalConfig.launcher.actionPrefix;
         if (text.startsWith(prefix)) {
-            for (const action of ["calc", "scheme", "variant"])
+            const modes = ["calc", "scheme", "variant"];
+            if (Valorant.hudOn("agentSelectLauncher"))
+                modes.push("agent");
+            for (const action of modes)
                 if (text.startsWith(`${prefix}${action} `))
                     return action;
 
@@ -49,6 +52,8 @@ StyledListView {
             return Schemes.query(text);
         case "variant":
             return M3Variants.query(text);
+        case "agent":
+            return Agents.query(text);
         default:
             return Apps.search(text);
         }
@@ -125,6 +130,13 @@ StyledListView {
 
             PropertyChanges {
                 root.delegate: variantItem
+            }
+        },
+        State {
+            name: "agent"
+
+            PropertyChanges {
+                root.delegate: agentItem
             }
         }
     ]
@@ -283,6 +295,14 @@ StyledListView {
         id: variantItem
 
         VariantItem {
+            list: root
+        }
+    }
+
+    Component {
+        id: agentItem
+
+        AgentItem {
             list: root
         }
     }

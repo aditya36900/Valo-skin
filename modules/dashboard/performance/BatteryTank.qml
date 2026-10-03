@@ -4,6 +4,7 @@ import Quickshell.Services.UPower
 import Caelestia.Config
 import Caelestia.Services
 import qs.components
+import qs.components.valorant
 import qs.services
 
 StyledClippingRect {
@@ -11,7 +12,7 @@ StyledClippingRect {
 
     property real animPerc: UPower.displayDevice.percentage
 
-    color: Colours.palette.m3secondaryContainer
+    color: Valorant.hudOn("matchStats") ? "transparent" : Colours.palette.m3secondaryContainer
     radius: Tokens.rounding.large
 
     implicitWidth: Config.dashboard.performance.showCpu || (Config.dashboard.performance.showGpu && Gpu.type !== Gpu.None) || Config.dashboard.performance.showStorage || Config.dashboard.performance.showMemory ? Tokens.sizes.dashboard.perfBattWidth : Tokens.sizes.dashboard.perfBattWidthSingle
@@ -19,6 +20,16 @@ StyledClippingRect {
 
     Behavior on animPerc {
         Anim {}
+    }
+
+    Loader {
+        anchors.fill: parent
+        z: -1
+        active: Valorant.hudOn("matchStats")
+
+        sourceComponent: HudCard {
+            color: Colours.palette.m3secondaryContainer
+        }
     }
 
     Contents {

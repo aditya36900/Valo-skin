@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Caelestia.Config
 import qs.components
 import qs.components.filedialog
+import qs.components.valorant
 import qs.services
 
 GridLayout {
@@ -99,6 +100,16 @@ GridLayout {
     }
 
     component Rect: StyledRect {
-        color: Colours.tPalette.m3surfaceContainer
+        color: Valorant.hudOn("matchStats") ? "transparent" : Colours.tPalette.m3surfaceContainer
+
+        Loader {
+            anchors.fill: parent
+            z: -1
+            active: Valorant.hudOn("matchStats")
+
+            sourceComponent: HudCard {
+                color: Colours.tPalette.m3surfaceContainer
+            }
+        }
     }
 }
