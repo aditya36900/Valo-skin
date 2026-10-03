@@ -18,6 +18,8 @@ readonly tag="valo-skin"
 do_deps=1
 do_shell=1
 do_dots=1
+do_sddm=0
+do_plymouth=0
 hypr_mode=auto
 assume_yes=0
 dry_run=0
@@ -32,6 +34,8 @@ Installs the Valo-skin shell and Valorant-themed dotfiles.
   --no-deps          Don't install packages
   --no-shell         Don't build/install the shell
   --no-dots          Don't install Hyprland/terminal/GTK/Qt/cursor theming
+  --sddm             Also install and enable the Valo-skin SDDM login theme (root)
+  --plymouth         Also install and enable the Valo-skin Plymouth boot splash (root)
   --hypr=MODE        lua | conf | auto (default: detect hyprland.lua vs hyprland.conf)
   -y, --yes          Don't ask for confirmation
   --dry-run          Print what would happen without changing anything
@@ -47,6 +51,8 @@ for arg in "$@"; do
         --no-deps) do_deps=0 ;;
         --no-shell) do_shell=0 ;;
         --no-dots) do_dots=0 ;;
+        --sddm) do_sddm=1 ;;
+        --plymouth) do_plymouth=1 ;;
         --hypr=lua|--hypr=conf|--hypr=auto) hypr_mode="${arg#--hypr=}" ;;
         -y|--yes) assume_yes=1 ;;
         --dry-run) dry_run=1 ;;
@@ -214,6 +220,17 @@ if (( uninstall )); then
     for d in alacritty fastfetch foot gtk-3.0 gtk-4.0 qt5ct/colors qt6ct/colors; do
         [[ -d "${config_home}/${d}" ]] && run rmdir --ignore-fail-on-non-empty -- "${config_home}/${d}"
     done
+    if [[ -f /etc/sddm.conf.d/10-valo-skin.conf ]]; then
+        run sudo rm -f /etc/sddm.conf.d/10-valo-skin.conf
+        run sudo rm -rf /usr/share/sddm/themes/valo-skin
+        say "removed SDDM theme"
+    fi
+    if [[ -d /usr/share/plymouth/themes/valo-skin ]]; then
+        prev="$(cat "${data_home}/valo-skin/plymouth-previous" 2>/dev/null || echo bgrt)"
+        command -v plymouth-set-default-theme >/dev/null && run sudo plymouth-set-default-theme "$prev"
+        run sudo rm -rf /usr/share/plymouth/themes/valo-skin
+        say "Plymouth theme reset to ${prev} (rebuild your initramfs to apply)"
+    fi
     run rm -f -- "${bin_dir}/valo-sync" "${bin_dir}/valo-cursors"
     say "Done. Backups of edited files: ${backup_dir/#${HOME}/\~}"
     note "The shell itself is left installed at ${qs_dir/#${HOME}/\~}; remove it manually if you want."
@@ -348,6 +365,83 @@ if (( do_dots )); then
     run mkdir -p "${HOME}/.icons/default"
     (( dry_run )) || printf '[Icon Theme]\nInherits=Valo-Crosshair\n' > "${HOME}/.icons/default/index.theme"
     say "cursor theme: Valo-Crosshair"
+fi
+
+# ------------------------------------------------------------------ login + boot (opt-in)
+
+scheme_get() {
+    python3 - "$1" "$2" <<'PY' 2>/dev/null || echo "$2"
+import json, os, sys
+path = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state"), "caelestia/valorant-scheme.json")
+try:
+    d = json.load(open(path))
+    v = {"accent": "#" + d["colours"]["primary"], "agent": d.get("flavour", ""), "name": d.get("agentName", "")}[sys.argv[1]]
+    print(v or sys.argv[2])
+except Exception:
+    print(sys.argv[2])
+PY
+}
+
+if (( do_sddm )); then
+    step "SDDM login theme"
+    if (( do_deps )); then
+        case "$distro" in
+            arch) run sudo pacman -S --needed --noconfirm sddm qt6-svg qt6-declarative ;;
+            fedora) run sudo dnf install -y sddm qt6-qtsvg qt6-qtdeclarative ;;
+        esac
+    fi
+    theme=/usr/share/sddm/themes/valo-skin
+    agent="$(scheme_get agent valorant)"
+    run sudo mkdir -p "$theme"
+    run sudo cp -r "${src}/themes/sddm/valo-skin/." "$theme/"
+    run sudo cp "${src}/assets/fonts/BebasNeue-Regular.ttf" "${src}/assets/fonts/Oswald-Variable.ttf" \
+        "${src}/assets/fonts/Barlow-Regular.ttf" "${src}/assets/fonts/MaterialSymbolsSharp.ttf" "${theme}/assets/"
+    wall="${src}/assets/wallpapers/agents/${agent}.webp"
+    [[ -f "$wall" ]] || wall="${src}/assets/wallpaper.webp"
+    run sudo cp "$wall" "${theme}/assets/background.webp"
+    run sudo sed -i -e "s|^accent=.*|accent=$(scheme_get accent '#ff4655')|" \
+        -e "s|^agentName=.*|agentName=$(scheme_get name Valorant)|" "${theme}/theme.conf"
+    run sudo mkdir -p /etc/sddm.conf.d
+    if (( ! dry_run )); then
+        printf '[Theme]\nCurrent=valo-skin\n' | sudo tee /etc/sddm.conf.d/10-valo-skin.conf >/dev/null
+    fi
+    say "SDDM theme set (re-run with --sddm after switching agents to update its accent and wallpaper)"
+    command -v systemctl >/dev/null && ! systemctl is-enabled -q sddm 2>/dev/null \
+        && note "SDDM isn't enabled: sudo systemctl enable sddm (disable your current display manager first)"
+fi
+
+if (( do_plymouth )); then
+    step "Plymouth boot splash"
+    if (( do_deps )); then
+        case "$distro" in
+            arch) run sudo pacman -S --needed --noconfirm plymouth ;;
+            fedora) run sudo dnf install -y plymouth plymouth-scripts plymouth-plugin-script plymouth-plugin-label ;;
+        esac
+    fi
+    if command -v plymouth-set-default-theme >/dev/null; then
+        current="$(plymouth-set-default-theme 2>/dev/null || true)"
+        if [[ -n "$current" && "$current" != valo-skin ]]; then
+            run mkdir -p "${data_home}/valo-skin"
+            (( dry_run )) || printf '%s\n' "$current" > "${data_home}/valo-skin/plymouth-previous"
+        fi
+        run sudo mkdir -p /usr/share/plymouth/themes/valo-skin
+        run sudo cp -r "${src}/themes/plymouth/valo-skin/." /usr/share/plymouth/themes/valo-skin/
+        run sudo mkdir -p /usr/share/fonts/valo-skin
+        run sudo cp "${src}/assets/fonts/Oswald-Variable.ttf" "${src}/assets/fonts/Barlow-Regular.ttf" /usr/share/fonts/valo-skin/
+        if [[ "$distro" == fedora ]]; then
+            run sudo plymouth-set-default-theme -R valo-skin
+        else
+            run sudo plymouth-set-default-theme valo-skin
+            if grep -qE '^HOOKS=.*plymouth' /etc/mkinitcpio.conf 2>/dev/null; then
+                run sudo mkinitcpio -P
+            else
+                say "Add the 'plymouth' hook to HOOKS in /etc/mkinitcpio.conf and run: sudo mkinitcpio -P"
+            fi
+        fi
+        grep -qw splash /proc/cmdline || say "Add 'splash' (and 'quiet') to your kernel command line to see the splash."
+    else
+        say "plymouth-set-default-theme not found; install Plymouth first."
+    fi
 fi
 
 step "Done"

@@ -47,6 +47,7 @@ switch at any time.
 | **UI sounds**: original synthesized lock-in, spike plant/defuse, failed-defuse and kill-banner sounds | ✅ |
 | **Agent quick-switch ring** (`SUPER+ALT+A`): agents grouped by role around the screen, keyboard and mouse | ✅ |
 | **Leave match** session menu, **contract-tier** media progress, **match history** notification sidebar | ✅ |
+| **SDDM login theme** (main-menu style, spike-defuse password) and **Plymouth boot splash** (`--sddm`, `--plymouth`) | ✅ |
 
 ## Previews
 
@@ -91,7 +92,8 @@ The installer:
 3. installs `valo-sync`, the fonts and the Valo-Crosshair cursor;
 4. adds one tagged include line each to your Hyprland, kitty, foot and GTK configs (with backups).
 
-Flags: `--no-deps`, `--no-shell`, `--no-dots`, `--hypr=lua|conf`, `-y`, `--uninstall`.
+Flags: `--no-deps`, `--no-shell`, `--no-dots`, `--hypr=lua|conf`, `--sddm`, `--plymouth`, `-y`,
+`--uninstall`.
 See [docs/DOTFILES.md](docs/DOTFILES.md) for exactly what changes.
 
 Then log into Hyprland, or start the shell with `qs -c caelestia`.

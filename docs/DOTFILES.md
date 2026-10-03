@@ -67,3 +67,28 @@ arrows with an accent stripe, an accent pointer, a Valorant-style crosshair, an 
 yourself. Anything it doesn't draw falls back to Adwaita.
 
 <img src="previews/cursors.png" width="700">
+
+## Login screen and boot splash (opt-in)
+
+```sh
+./install.sh --no-shell --no-dots --sddm --plymouth
+```
+
+**SDDM** (`themes/sddm/valo-skin`, Qt 6): a Valorant main-menu style login. Users are listed as
+agents to lock in, the password field is a spike defuse bar (planted → defusing → failed with a
+shake, or defused), and there's a round-timer clock plus Quit / Rematch / Standby buttons. The
+installer copies the fonts, uses the current agent's wallpaper and accent, and writes
+`/etc/sddm.conf.d/10-valo-skin.conf`. Re-run it with `--sddm` after switching agents to update the
+login screen.
+
+**Plymouth** (`themes/plymouth/valo-skin`, script plugin): "Loading match" with a pulsing
+crosshair, 14 progress cells, boot messages, and a "Spike planted" passphrase prompt for encrypted
+disks. Needs Plymouth's label plugin for text (Fedora: `plymouth-plugin-label`; included on Arch).
+On Fedora the installer rebuilds the initramfs; on Arch it runs `mkinitcpio -P` if the `plymouth`
+hook is configured, and tells you what to add otherwise. Add `splash` to your kernel command line.
+
+`--uninstall` removes both and restores your previous Plymouth theme.
+
+| SDDM | Plymouth (boot, then passphrase) |
+|---|---|
+| <img src="previews/sddm.png" width="480"> | <img src="previews/plymouth.png" width="320"> |

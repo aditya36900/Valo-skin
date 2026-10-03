@@ -1,0 +1,15 @@
+[SddmGreeterTheme]
+Name=Valo-skin
+Description=Valorant main-menu style login: spike-defuse password bar, agent accent, chamfered HUD
+Author=Valo-skin contributors
+License=GPL-3.0
+Type=sddm-theme
+Version=1.0
+Website=https://github.com/aditya36900/Valo-skin
+Screenshot=assets/preview.png
+MainScript=Main.qml
+ConfigFile=theme.conf
+TranslationsDirectory=translations
+Theme-Id=valo-skin
+Theme-API=2.0
+QtVersion=6

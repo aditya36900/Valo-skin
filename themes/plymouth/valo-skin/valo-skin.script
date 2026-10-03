@@ -1,0 +1,141 @@
+# Valo-skin Plymouth theme: "Loading match" with a pulsing crosshair, progress cells and
+# a spike-defuse styled passphrase prompt (LUKS etc.).
+
+Window.SetBackgroundTopColor(0.059, 0.098, 0.137);
+Window.SetBackgroundBottomColor(0.039, 0.055, 0.071);
+
+screen_w = Window.GetWidth();
+screen_h = Window.GetHeight();
+screen_x = Window.GetX();
+screen_y = Window.GetY();
+
+# ---------------------------------------------------------------- background (cover)
+bg_image = Image("background.png");
+bg_scale = Math.Max(screen_w / bg_image.GetWidth(), screen_h / bg_image.GetHeight());
+bg_scaled = bg_image.Scale(Math.Int(bg_image.GetWidth() * bg_scale), Math.Int(bg_image.GetHeight() * bg_scale));
+bg = Sprite(bg_scaled);
+bg.SetX(screen_x + (screen_w - bg_scaled.GetWidth()) / 2);
+bg.SetY(screen_y + (screen_h - bg_scaled.GetHeight()) / 2);
+bg.SetZ(-100);
+
+# ---------------------------------------------------------------- emblem + crosshair
+emblem_image = Image("emblem.png");
+cross_image = Image("crosshair.png");
+centre_x = screen_x + screen_w / 2;
+centre_y = screen_y + screen_h * 0.42;
+
+emblem = Sprite(emblem_image);
+emblem.SetX(centre_x - emblem_image.GetWidth() / 2);
+emblem.SetY(centre_y - emblem_image.GetHeight() / 2);
+emblem.SetZ(10);
+
+cross = Sprite(cross_image);
+cross.SetX(centre_x - cross_image.GetWidth() / 2);
+cross.SetY(centre_y - cross_image.GetHeight() / 2);
+cross.SetZ(11);
+
+# ---------------------------------------------------------------- label + progress cells
+label_image = Image.Text("LOADING MATCH", 0.925, 0.91, 0.882, 0.8, "Oswald 16");
+label = Sprite(label_image);
+label.SetX(centre_x - label_image.GetWidth() / 2);
+label.SetY(centre_y + emblem_image.GetHeight() / 2 + 28);
+label.SetZ(10);
+
+cell_on = Image("cell-on.png");
+cell_off = Image("cell-off.png");
+cell_count = 14;
+cell_gap = 4;
+cells_w = cell_count * cell_on.GetWidth() + (cell_count - 1) * cell_gap;
+cells_y = centre_y + emblem_image.GetHeight() / 2 + 64;
+for (i = 0; i < cell_count; i++) {
+    cells[i] = Sprite(cell_off);
+    cells[i].SetX(centre_x - cells_w / 2 + i * (cell_on.GetWidth() + cell_gap));
+    cells[i].SetY(cells_y);
+    cells[i].SetZ(10);
+}
+
+fun set_progress(fraction) {
+    lit = Math.Int(fraction * cell_count + 0.5);
+    for (i = 0; i < cell_count; i++) {
+        if (i < lit) cells[i].SetImage(cell_on);
+        else cells[i].SetImage(cell_off);
+    }
+}
+
+fun boot_progress_cb(duration, progress) {
+    set_progress(progress);
+}
+Plymouth.SetBootProgressFunction(boot_progress_cb);
+
+# ---------------------------------------------------------------- crosshair pulse
+tick = 0;
+fun refresh_cb() {
+    tick++;
+    pulse = 0.55 + 0.45 * Math.Abs(Math.Sin(tick / 18));
+    cross.SetOpacity(pulse);
+}
+Plymouth.SetRefreshFunction(refresh_cb);
+
+# ---------------------------------------------------------------- passphrase prompt ("defuse")
+entry_image = Image("entry.png");
+entry = Sprite(entry_image);
+entry.SetX(centre_x - entry_image.GetWidth() / 2);
+entry.SetY(cells_y + 60);
+entry.SetZ(20);
+entry.SetOpacity(0);
+
+prompt_sprite = Sprite();
+prompt_sprite.SetZ(21);
+bullet_sprites = [];
+
+fun clear_bullets() {
+    for (i = 0; bullet_sprites[i]; i++) bullet_sprites[i].SetOpacity(0);
+}
+
+fun display_password_cb(prompt, bullets) {
+    title = "SPIKE PLANTED  //  " + prompt;
+    prompt_image = Image.Text(title, 1.0, 0.275, 0.333, 1, "Oswald 14");
+    prompt_sprite.SetImage(prompt_image);
+    prompt_sprite.SetX(centre_x - prompt_image.GetWidth() / 2);
+    prompt_sprite.SetY(entry.GetY() - prompt_image.GetHeight() - 10);
+    prompt_sprite.SetOpacity(1);
+    entry.SetOpacity(1);
+    label.SetOpacity(0);
+
+    clear_bullets();
+    shown = Math.Min(bullets, cell_count);
+    start_x = centre_x - (cell_count * (cell_on.GetWidth() + cell_gap)) / 2;
+    for (i = 0; i < shown; i++) {
+        if (!bullet_sprites[i]) bullet_sprites[i] = Sprite(cell_on);
+        bullet_sprites[i].SetX(start_x + i * (cell_on.GetWidth() + cell_gap));
+        bullet_sprites[i].SetY(entry.GetY() + (entry_image.GetHeight() - cell_on.GetHeight()) / 2);
+        bullet_sprites[i].SetZ(22);
+        bullet_sprites[i].SetOpacity(1);
+    }
+}
+Plymouth.SetDisplayPasswordFunction(display_password_cb);
+
+fun display_normal_cb() {
+    entry.SetOpacity(0);
+    prompt_sprite.SetOpacity(0);
+    clear_bullets();
+    label.SetOpacity(1);
+}
+Plymouth.SetDisplayNormalFunction(display_normal_cb);
+
+# ---------------------------------------------------------------- messages
+message_sprite = Sprite();
+message_sprite.SetZ(30);
+fun message_cb(text) {
+    message_image = Image.Text(text, 0.925, 0.91, 0.882, 0.7, "Barlow 12");
+    message_sprite.SetImage(message_image);
+    message_sprite.SetX(centre_x - message_image.GetWidth() / 2);
+    message_sprite.SetY(screen_y + screen_h * 0.9);
+}
+Plymouth.SetMessageFunction(message_cb);
+
+fun quit_cb() {
+    set_progress(1);
+    label.SetImage(Image.Text("SPIKE DEFUSED", 0.09, 0.82, 0.651, 1, "Oswald 16"));
+}
+Plymouth.SetQuitFunction(quit_cb);

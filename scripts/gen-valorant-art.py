@@ -48,7 +48,7 @@ def draw_emblem(p: QPainter, ox: float, oy: float, s: float, top: QColor, bottom
         p.drawRect(QRectF(ox + x * s, oy + y * s, w * s, h * s))
 
 
-def wallpaper(w=3840, h=2160, accent=RED, name=None, role=None, seed=7):
+def wallpaper(w=3840, h=2160, accent=RED, name=None, role=None, seed=7, emblem=True):
     """Tactical wallpaper. With `name`, the agent's name and role are set in the composition."""
     img = QImage(w, h, QImage.Format_RGB32)
     p = QPainter(img)
@@ -120,7 +120,8 @@ def wallpaper(w=3840, h=2160, accent=RED, name=None, role=None, seed=7):
     p.drawLine(int(w * 0.08), int(h * 0.5), int(w * 0.11), int(h * 0.5))
 
     # Emblem, upper-left third
-    draw_emblem(p, w * 0.1, h * 0.36, 2.2, accent, QColor(236, 232, 225, 200))
+    if emblem:
+        draw_emblem(p, w * 0.1, h * 0.36, 2.2, accent, QColor(236, 232, 225, 200))
 
     if name:
         # Huge outlined agent name behind everything on the left, role tag under the HUD line
