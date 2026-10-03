@@ -38,6 +38,19 @@ pair them. The bar then shows the phone with its battery as charge pips; the pop
 Screenshot, Clipboard, Send file, Browse (phone storage) and Messages. Phone notifications and calls
 arrive as kill banners tagged **Uplink** (calls in teal, pulsing).
 
+## `taskbar`
+
+The bar's taskbar (on by default, replacing the old active-window title and bench) shows pinned apps
+and every open window, Windows style: click a window to focus it, click the active one to minimize
+it, click a dimmed (minimized) one to restore it. Middle-click closes, right-click pins/unpins, hover
+shows a live preview with Minimize/Restore, New window, Pin and Close. The strip at the end is
+"show desktop". `Alt+Tab` / `Alt+Shift+Tab` cycle windows.
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `pinned` | string[] | `[]` | Desktop entry ids kept on the taskbar (right-click a tile to add/remove) |
+| `allWorkspaces` | bool | `true` | List windows from every workspace (`false`: only the current one) |
+
 ## `player`
 
 | Key | Type | Default | Description |
@@ -183,6 +196,7 @@ Two more IPC targets come with the bar:
 | `layout next` | Next tiling layout, also `SUPER+ALT+T` |
 | `layout set <name>` / `layout get` | Set or print the layout |
 
+| `taskbar next` / `prev` / `showDesktop` | Task switcher (`Alt+Tab`) and show desktop |
 | `stash open` / `stash wipe` | Clipboard history in the launcher (`SUPER+SHIFT+V`) / clear it (pins kept) |
 | `nightops toggle` / `enable` / `disable` | Blue-light filter (`SUPER+ALT+N`) |
 | `nightops mode <off\|on\|schedule\|sun>` / `temperature <K>` / `status` | |

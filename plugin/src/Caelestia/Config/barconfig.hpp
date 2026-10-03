@@ -138,9 +138,10 @@ class BarConfig : public ConfigObject {
             LIST_ENTRY(workspaces, true),
             LIST_ENTRY(layout, true), // Valo-skin: tiling layout switch
             LIST_ENTRY(spacer, true),
-            LIST_ENTRY(activeWindow, true),
+            LIST_ENTRY(taskbar, true), // Valo-skin: Windows-style taskbar (pins + every window)
             LIST_ENTRY(spacer, true),
-            LIST_ENTRY(bench, true), // Valo-skin: minimized windows
+            LIST_ENTRY(activeWindow, false), // replaced by the taskbar
+            LIST_ENTRY(bench, false), // replaced by the taskbar (minimized windows show dimmed)
             LIST_ENTRY(tray, true),
             LIST_ENTRY(clock, true),
             LIST_ENTRY(statusIcons, true),

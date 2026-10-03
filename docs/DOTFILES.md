@@ -41,6 +41,8 @@ only `custom_palette=false` (the default).
 - auto-tiling: dwindle splits along the focused window's longer side and keeps splits; `SUPER+ALT+T`
   (or the layout button in the bar) cycles dwindle / master / scrolling, and the choice survives
   config reloads
+- Plasma-like focus: `misc.focus_on_activate`, modal dialogs float centred, polkit/pinentry password
+  prompts float, stay on top and keep keyboard focus (so they're usable without minimizing anything)
 - 2 px borders with a rotating agent-accent → red gradient; inactive borders in the outline colour
 - `rounding = 0`, gaps 4/8 to match the shell's screen frame, hard 4 px offset shadows, blur on
 - "valoSnap" animations: quick slides with a slight overshoot, vertical workspace slides
@@ -57,6 +59,7 @@ only `custom_palette=false` (the default).
 | `SUPER+ALT+T` | Next tiling layout |
 | `SUPER+ALT+M` | Minimize the focused window to the bench |
 | `SUPER+ALT+SHIFT+M` | Restore the last benched window |
+| `ALT+TAB` / `ALT+SHIFT+TAB` | Next / previous window |
 | `SUPER+SHIFT+V` | Clipboard history (Stash) |
 | `SUPER+ALT+N` | Night Ops blue-light filter |
 | `SUPER+ALT+P` | Ring your phone (Uplink) |

@@ -120,6 +120,11 @@ Item {
         }
 
         Popout {
+            name: "taskbarwindow"
+            sourceComponent: TaskbarWindow {}
+        }
+
+        Popout {
             name: "phone"
             sourceComponent: UplinkPopout {}
         }

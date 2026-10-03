@@ -68,6 +68,16 @@ ColumnLayout {
                 popouts.hasCurrent = false;
                 tray.expanded = true;
             }
+        } else if (id === "taskbar") {
+            const hit = (ch.item as Taskbar).tileAt(mapToItem(ch.item as Item, width / 2, y).y);
+            if (hit) {
+                TaskbarState.hovered = hit.item;
+                popouts.currentName = "taskbarwindow";
+                popouts.currentCenter = Qt.binding(() => hit.tile.mapToItem(root, 0, hit.tile.height / 2).y);
+                popouts.hasCurrent = true;
+            } else {
+                popouts.hasCurrent = false;
+            }
         } else if (id === "activeWindow" && Config.bar.popouts.activeWindow && Config.bar.activeWindow.showOnHover) {
             popouts.currentName = id.toLowerCase();
             popouts.currentCenter = (ch.item as Item).mapToItem(root, 0, (ch.item as Item).implicitHeight / 2).y ?? 0;
@@ -134,6 +144,14 @@ ColumnLayout {
                         objectName: "taskbarWorkspaces"
                         screen: root.screen
                         fullscreen: root.fullscreen
+                    }
+                }
+            }
+            DelegateChoice {
+                roleValue: "taskbar"
+                delegate: EntryWrapper {
+                    Taskbar {
+                        objectName: "taskbarWindows"
                     }
                 }
             }

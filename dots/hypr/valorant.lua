@@ -132,6 +132,19 @@ hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
 -- The shell's drawers already have their own chamfered frame
 hl.layer_rule({ name = "valo-drawers-noanim", match = { namespace = "caelestia-drawers" }, no_anim = true })
 
+-- Multitasking like Plasma: windows that ask for attention (dialogs, links opened from other apps)
+-- get focus, modal dialogs float centred, and password prompts always take the keyboard
+hl.config({ misc = { focus_on_activate = true } })
+hl.window_rule({ name = "valo-modal", match = { modal = true }, float = true, center = true })
+hl.window_rule({
+    name = "valo-polkit",
+    match = { class = "^(org.kde.polkit-kde-authentication-agent-1|polkit-kde-authentication-agent-1|hyprpolkitagent|lxqt-policykit-agent|polkit-gnome-authentication-agent-1|gcr-prompter|org.kde.ksecretd|pinentry-qt|pinentry-gtk.*)$" },
+    float = true,
+    center = true,
+    pin = true,
+    stay_focused = true,
+})
+
 -- Floating pickers and dialogs get the accent border too, centred
 hl.window_rule({
     name = "valo-dialogs",
@@ -158,6 +171,8 @@ hl.bind("SUPER + ALT + T", hl.dsp.exec_cmd("qs -c caelestia ipc call layout next
 -- Hyprland has no minimize: park the window on the bench (special:minimized), call it back
 hl.bind("SUPER + ALT + M", hl.dsp.exec_cmd("qs -c caelestia ipc call bench minimize"))
 hl.bind("SUPER + ALT + SHIFT + M", hl.dsp.exec_cmd("qs -c caelestia ipc call bench restore"))
+hl.bind("ALT + TAB", hl.dsp.exec_cmd("qs -c caelestia ipc call taskbar next")) -- task switcher
+hl.bind("ALT + SHIFT + TAB", hl.dsp.exec_cmd("qs -c caelestia ipc call taskbar prev"))
 hl.bind("SUPER + SHIFT + V", hl.dsp.exec_cmd("qs -c caelestia ipc call stash open")) -- clipboard history
 hl.bind("SUPER + ALT + N", hl.dsp.exec_cmd("qs -c caelestia ipc call nightops toggle")) -- blue-light filter
 hl.bind("SUPER + ALT + P", hl.dsp.exec_cmd("qs -c caelestia ipc call uplink ring")) -- find my phone
