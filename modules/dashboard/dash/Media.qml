@@ -7,6 +7,7 @@ import Caelestia.Services
 import qs.components
 import qs.components.controls
 import qs.components.widgets
+import qs.components.valorant
 import qs.services
 import qs.utils
 
@@ -19,6 +20,9 @@ Item {
     }
 
     readonly property real arcCoverGap: Tokens.spacing.extraSmall
+    // Valorant: track progress as contract tiers instead of the dancing gif
+    readonly property bool contract: Valorant.hudOn("contractMedia")
+    readonly property int tiers: 10
 
     anchors.top: parent.top
     anchors.bottom: parent.bottom
@@ -171,10 +175,74 @@ Item {
         anchors.bottomMargin: Tokens.padding.large
         anchors.margins: Tokens.padding.extraLargeIncreased
 
-        playing: Players.active?.isPlaying ?? false
+        visible: !root.contract
+        playing: (Players.active?.isPlaying ?? false) && visible
         speed: Audio.beatTracker.bpm / Config.general.mediaGifSpeedAdjustment // qmllint disable unresolved-type
         source: Paths.absolutePath(Config.paths.mediaGif)
         asynchronous: true
         fillMode: AnimatedImage.PreserveAspectFit
+    }
+
+    Column {
+        anchors.top: controls.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.topMargin: Tokens.spacing.large
+        anchors.leftMargin: Tokens.padding.large
+        anchors.rightMargin: Tokens.padding.large
+        visible: root.contract
+        spacing: Tokens.spacing.small
+
+        Row {
+            width: parent.width
+
+            StyledText {
+                width: parent.width / 2
+                text: qsTr("Contract")
+                color: Colours.palette.m3outline
+                font: Tokens.font.label.small
+            }
+
+            StyledText {
+                width: parent.width / 2
+                horizontalAlignment: Text.AlignRight
+                text: qsTr("Tier %1/%2").arg(Math.min(root.tiers, Math.floor(root.playerProgress * root.tiers) + 1)).arg(root.tiers)
+                color: Colours.palette.m3primary
+                font: Tokens.font.label.small
+            }
+        }
+
+        Row {
+            id: tierRow
+
+            width: parent.width
+            spacing: 3
+
+            Repeater {
+                model: root.tiers
+
+                ChamferRect {
+                    required property int index
+                    readonly property real fill: Math.max(0, Math.min(1, root.playerProgress * root.tiers - index))
+
+                    width: (tierRow.width - tierRow.spacing * (root.tiers - 1)) / root.tiers
+                    height: 10
+                    chamfer: 0
+                    topRight: 5
+                    bottomLeft: 5
+                    color: fill >= 1 ? Colours.palette.m3primary : Qt.alpha(Colours.palette.m3onSurface, 0.1)
+
+                    // Partially-earned tier
+                    ChamferRect {
+                        width: parent.width * parent.fill
+                        height: parent.height
+                        visible: parent.fill > 0 && parent.fill < 1
+                        chamfer: 0
+                        bottomLeft: 5
+                        color: Qt.alpha(Colours.palette.m3primary, 0.7)
+                    }
+                }
+            }
+        }
     }
 }

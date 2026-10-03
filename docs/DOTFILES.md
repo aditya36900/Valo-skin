@@ -35,6 +35,7 @@ only `custom_palette=false` (the default).
 | Bind | Action |
 |---|---|
 | `SUPER+ALT+→` / `←` | Next / previous agent |
+| `SUPER+ALT+A` | Agent quick-switch ring |
 | `SUPER+ALT+V` | Valorant palette ↔ wallpaper scheme |
 | `SUPER+ALT+L` / `D` | Light / dark mode |
 | `SUPER+ALT+S` | Re-run valo-sync |

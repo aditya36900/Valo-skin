@@ -81,6 +81,9 @@ They all also require `enabled: true`.
 | `spikeLock` | Lock screen password input as a spike defuse bar |
 | `agentSelectLauncher` | `>agent` launcher mode (and the **Agent** action) |
 | `matchStats` | Dashboard and performance cards as HUD-framed match stats; CPU/GPU load as a rank tier |
+| `contractMedia` | Dashboard media: track progress as 10 contract tiers instead of the dancing gif |
+| `matchHistory` | Notification sidebar framed and titled as match history |
+| `leaveMatch` | Session menu as a "Leave match?" screen with captions (Leave, Quit, Standby, Rematch) |
 
 ## Agents
 
@@ -136,6 +139,7 @@ All commands are available as `qs -c caelestia ipc call valorant <cmd> [arg]` or
 | `accent <#rrggbb\|reset>` | Set or clear a custom accent |
 | `mode <dark\|light>` | Switch mode |
 | `toggle` | Switch between the Valorant palette and the wallpaper scheme |
+| `radial` | Toggle the agent quick-switch ring (also `SUPER+ALT+A`) |
 | `sound <name>` | Play a UI sound: `lockin`, `plant`, `defuse`, `fail`, `banner`, `tick` |
 
 Every IPC change is saved back to `valorant.json`.

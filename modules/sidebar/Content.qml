@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Caelestia.Config
 import qs.components
+import qs.components.valorant
 import qs.services
 
 Item {
@@ -21,7 +22,17 @@ Item {
             Layout.fillHeight: true
 
             radius: Tokens.rounding.large
-            color: Colours.tPalette.m3surfaceContainerLow
+            color: Valorant.hudOn("matchHistory") ? "transparent" : Colours.tPalette.m3surfaceContainerLow
+
+            Loader {
+                anchors.fill: parent
+                z: -1
+                active: Valorant.hudOn("matchHistory")
+
+                sourceComponent: HudCard {
+                    color: Colours.tPalette.m3surfaceContainerLow
+                }
+            }
 
             NotifDock {
                 objectName: "sidebarNotifications"

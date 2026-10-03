@@ -31,6 +31,7 @@ ShellRoot {
     Background {}
     Drawers {}
     AreaPicker {}
+    AgentRadialWindow {}
     Lock {
         id: lock
     }

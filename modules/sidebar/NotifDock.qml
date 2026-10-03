@@ -65,7 +65,11 @@ Item {
             anchors.right: parent.right
             anchors.leftMargin: Tokens.spacing.extraSmall
 
-            text: root.notifCount > 0 ? qsTr("notification%1").arg(root.notifCount === 1 ? "" : "s") : qsTr("Notifications")
+            text: {
+                if (Valorant.hudOn("matchHistory"))
+                    return root.notifCount > 0 ? qsTr("Match history · round%1").arg(root.notifCount === 1 ? "" : "s") : qsTr("Match history");
+                return root.notifCount > 0 ? qsTr("notification%1").arg(root.notifCount === 1 ? "" : "s") : qsTr("Notifications");
+            }
             color: Colours.palette.m3outline
             font: Tokens.font.label.large
             elide: Text.ElideRight

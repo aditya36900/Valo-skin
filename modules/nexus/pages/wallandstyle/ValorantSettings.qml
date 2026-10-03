@@ -53,6 +53,21 @@ ColumnLayout {
             key: "matchStats",
             text: qsTr("Match stats"),
             subtext: qsTr("Dashboard cards as a match scoreboard")
+        },
+        {
+            key: "contractMedia",
+            text: qsTr("Contract media"),
+            subtext: qsTr("Track progress as contract tiers")
+        },
+        {
+            key: "matchHistory",
+            text: qsTr("Match history"),
+            subtext: qsTr("Notification sidebar as match history")
+        },
+        {
+            key: "leaveMatch",
+            text: qsTr("Leave match"),
+            subtext: qsTr("Session menu with captions and a red focus frame")
         }
     ]
 

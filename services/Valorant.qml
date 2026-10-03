@@ -189,6 +189,8 @@ Singleton {
     readonly property bool soundsEnabled: enabled && (cfg.sounds?.enabled ?? true)
     readonly property real soundVolume: Math.max(0, Math.min(1, cfg.sounds?.volume ?? 0.6))
     property var lastPlayed: ({})
+    // Agent quick-switch ring visibility (modules/AgentRadialWindow.qml)
+    property bool radialOpen
 
     readonly property real fxIntensity: Math.max(0, Math.min(2, cfg.fx?.intensity ?? 1))
     readonly property bool glitch: (cfg.fx?.glitch ?? true) && fxIntensity > 0
@@ -202,6 +204,9 @@ Singleton {
             killBanners: cfg.hud?.killBanners ?? true,
             chargeOsd: cfg.hud?.chargeOsd ?? true,
             matchStats: cfg.hud?.matchStats ?? true,
+            leaveMatch: cfg.hud?.leaveMatch ?? true,
+            contractMedia: cfg.hud?.contractMedia ?? true,
+            matchHistory: cfg.hud?.matchHistory ?? true,
             spikeLock: cfg.hud?.spikeLock ?? true,
             agentSelectLauncher: cfg.hud?.agentSelectLauncher ?? true
         })
@@ -246,6 +251,9 @@ Singleton {
                 killBanners: true,
                 chargeOsd: true,
                 matchStats: true,
+                leaveMatch: true,
+                contractMedia: true,
+                matchHistory: true,
                 spikeLock: true,
                 agentSelectLauncher: true
             }
@@ -530,6 +538,10 @@ Singleton {
                 return "Expected dark or light";
             root.set("mode", m);
             return `Mode: ${m}`;
+        }
+
+        function radial(): void {
+            root.radialOpen = !root.radialOpen;
         }
 
         function sound(name: string): string {

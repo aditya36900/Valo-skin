@@ -138,6 +138,7 @@ local valo = "qs -c caelestia ipc call valorant "
 
 hl.bind("SUPER + ALT + right", hl.dsp.exec_cmd(valo .. "next")) -- next agent
 hl.bind("SUPER + ALT + left", hl.dsp.exec_cmd(valo .. "prev")) -- previous agent
+hl.bind("SUPER + ALT + A", hl.dsp.exec_cmd(valo .. "radial")) -- agent quick-switch ring
 hl.bind("SUPER + ALT + V", hl.dsp.exec_cmd(valo .. "toggle")) -- Valorant palette <-> wallpaper scheme
 hl.bind("SUPER + ALT + L", hl.dsp.exec_cmd(valo .. "mode light"))
 hl.bind("SUPER + ALT + D", hl.dsp.exec_cmd(valo .. "mode dark"))

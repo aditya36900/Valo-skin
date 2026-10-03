@@ -45,6 +45,8 @@ switch at any time.
 | **One-shot installer** for Arch and Fedora with backups, idempotent re-runs and `--uninstall` | ✅ |
 | **Agent wallpapers**: an original wallpaper per agent (accent shards, name and role), swapped on lock-in | ✅ |
 | **UI sounds**: original synthesized lock-in, spike plant/defuse, failed-defuse and kill-banner sounds | ✅ |
+| **Agent quick-switch ring** (`SUPER+ALT+A`): agents grouped by role around the screen, keyboard and mouse | ✅ |
+| **Leave match** session menu, **contract-tier** media progress, **match history** notification sidebar | ✅ |
 
 ## Previews
 
@@ -61,6 +63,10 @@ Offscreen renders of the real components (stubbed system data):
 Chamfer-mode panel shader (navy = panels and screen frame):
 
 <img src="docs/previews/chamfer-panels.png" width="450">
+
+| Agent quick-switch ring | Leave match + contract media |
+|---|---|
+| <img src="docs/previews/agent-radial.png" width="480"> | <img src="docs/previews/leave-match-contract.png" width="300"> |
 
 Agent wallpapers (Jett, Reyna, Viper, Killjoy):
 
