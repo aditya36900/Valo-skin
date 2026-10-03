@@ -4,6 +4,7 @@ import QtQuick
 import Caelestia.Config
 import qs.components
 import qs.components.effects
+import qs.components.valorant
 import qs.services
 
 StyledRect {
@@ -47,7 +48,15 @@ StyledRect {
     implicitWidth: Tokens.sizes.bar.innerWidth - Tokens.padding.small
     implicitHeight: size
     radius: Tokens.rounding.full
-    color: Colours.palette.m3primary
+    color: Valorant.enabled ? "transparent" : Colours.palette.m3primary
+
+    ChamferRect {
+        anchors.fill: parent
+        visible: Valorant.enabled
+        color: Colours.palette.m3primary
+        topRight: 0
+        bottomLeft: 0
+    }
 
     Colouriser {
         source: root.mask

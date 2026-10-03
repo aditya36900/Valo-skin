@@ -5,6 +5,7 @@ import QtQuick.Layouts
 import Quickshell
 import Caelestia.Config
 import qs.components
+import qs.components.valorant
 import qs.services
 import qs.utils
 
@@ -23,6 +24,9 @@ ColumnLayout {
     readonly property int ws: groupOffset + index + 1
     readonly property bool isOccupied: occupied[ws] ?? false
     readonly property bool hasWindows: isOccupied && Config.bar.workspaces.showWindows
+    readonly property bool isActive: activeWsId === ws
+    // Valorant: rank-style diamond pips instead of labels
+    readonly property bool rank: Valorant.hudOn("rankWorkspaces")
 
     Layout.alignment: Qt.AlignHCenter
     Layout.preferredHeight: size
@@ -50,9 +54,27 @@ ColumnLayout {
             const activeLabel = Config.bar.workspaces.activeLabel || (root.isOccupied ? occupiedLabel : label);
             return root.activeWsId === root.ws ? activeLabel : root.isOccupied ? occupiedLabel : label;
         }
-        color: Config.bar.workspaces.occupiedBg || root.isOccupied || root.activeWsId === root.ws ? Colours.palette.m3onSurface : Colours.layer(Colours.palette.m3outlineVariant, 2)
+        color: root.rank ? "transparent" : Config.bar.workspaces.occupiedBg || root.isOccupied || root.activeWsId === root.ws ? Colours.palette.m3onSurface : Colours.layer(Colours.palette.m3outlineVariant, 2)
         verticalAlignment: Qt.AlignVCenter
         font.family: Tokens.font.workspaces
+
+        ChamferRect {
+            property real pipSize: root.isActive ? 13 : root.isOccupied ? 9 : 7
+            readonly property bool solid: root.isActive || root.isOccupied
+
+            anchors.centerIn: parent
+            implicitWidth: pipSize
+            implicitHeight: pipSize
+            visible: root.rank
+            chamfer: pipSize / 2
+            color: solid ? Colours.palette.m3onSurface : Qt.alpha(Colours.palette.m3onSurface, 0.22)
+
+            Behavior on pipSize {
+                Anim {
+                    type: Anim.StandardSmall
+                }
+            }
+        }
     }
 
     Loader {

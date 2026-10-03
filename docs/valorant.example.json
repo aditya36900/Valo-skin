@@ -28,6 +28,7 @@
         "abilitySlots": true,
         "rankWorkspaces": true,
         "killBanners": true,
+        "chargeOsd": true,
         "spikeLock": true,
         "agentSelectLauncher": true
     }

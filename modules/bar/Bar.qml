@@ -158,8 +158,9 @@ ColumnLayout {
             DelegateChoice {
                 roleValue: "clock"
                 delegate: EntryWrapper {
-                    Clock {
+                    Loader {
                         objectName: "taskbarClock"
+                        sourceComponent: Valorant.hudOn("roundTimerClock") ? roundTimerClock : stockClock
                     }
                 }
             }
@@ -181,6 +182,18 @@ ColumnLayout {
                 }
             }
         }
+    }
+
+    Component {
+        id: roundTimerClock
+
+        RoundTimerClock {}
+    }
+
+    Component {
+        id: stockClock
+
+        Clock {}
     }
 
     component EntryWrapper: Item {

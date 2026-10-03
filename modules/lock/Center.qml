@@ -39,15 +39,34 @@ ColumnLayout {
         centerWidth: root.centerWidth
     }
 
-    PasswordInput {
+    Loader {
         Layout.alignment: Qt.AlignHCenter
-        centerScale: Math.max(0.8, root.centerScale)
-        centerWidth: root.centerWidth
-        lock: root.lock
+        focus: true
+        sourceComponent: Valorant.hudOn("spikeLock") ? spikeInput : stockInput
     }
 
     StateMessage {
         Layout.fillWidth: true
         pam: root.lock.pam
+    }
+
+    Component {
+        id: spikeInput
+
+        SpikePasswordInput {
+            centerScale: Math.max(0.8, root.centerScale)
+            centerWidth: root.centerWidth
+            lock: root.lock
+        }
+    }
+
+    Component {
+        id: stockInput
+
+        PasswordInput {
+            centerScale: Math.max(0.8, root.centerScale)
+            centerWidth: root.centerWidth
+            lock: root.lock
+        }
     }
 }

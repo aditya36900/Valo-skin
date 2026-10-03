@@ -9,6 +9,7 @@ import Caelestia.Config
 import qs.components
 import qs.components.controls
 import qs.components.effects
+import qs.components.valorant
 import qs.services
 import qs.utils
 
@@ -21,8 +22,10 @@ StyledRect {
     readonly property int bodyTextFormat: /[<*_`#\[\]]/.test(modelData.body) ? Text.MarkdownText : Text.PlainText
     readonly property int nonAnimHeight: summary.implicitHeight + (root.expanded ? Tokens.spacing.extraSmall * 2 + appName.height + body.height + actions.height + actions.anchors.topMargin : bodyPreview.height) + inner.anchors.margins * 2
     property bool expanded: Config.notifs.openExpanded
+    readonly property bool killBanner: Valorant.hudOn("killBanners")
+    readonly property color baseColour: root.modelData.urgency === NotificationUrgency.Critical ? Colours.palette.m3secondaryContainer : Colours.tPalette.m3surfaceContainer
 
-    color: root.modelData.urgency === NotificationUrgency.Critical ? Colours.palette.m3secondaryContainer : Colours.tPalette.m3surfaceContainer
+    color: killBanner ? "transparent" : baseColour
     radius: Tokens.rounding.large
 
     implicitHeight: inner.implicitHeight
@@ -37,6 +40,16 @@ StyledRect {
     Behavior on x {
         Anim {
             easing: Tokens.anim.emphasizedDecel
+        }
+    }
+
+    Loader {
+        anchors.fill: parent
+        active: root.killBanner
+
+        sourceComponent: KillBannerBg {
+            color: root.modelData.urgency === NotificationUrgency.Critical ? Colours.palette.m3errorContainer : Colours.tPalette.m3surfaceContainer
+            accent: root.modelData.urgency === NotificationUrgency.Critical ? Valorant.red : root.modelData.urgency === NotificationUrgency.Low ? Colours.palette.m3outline : Colours.palette.m3primary
         }
     }
 

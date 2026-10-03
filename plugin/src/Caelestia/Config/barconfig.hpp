@@ -122,7 +122,7 @@ class BarConfig : public ConfigObject {
     CONFIG_LIST(EntryList, statusIcons,
         {
             LIST_ENTRY(lockStatus, true),
-            LIST_ENTRY(audio, false),
+            LIST_ENTRY(audio, true), // Valo-skin: shown as an ability slot with volume charge
             LIST_ENTRY(microphone, false),
             LIST_ENTRY(kbLayout, false),
             LIST_ENTRY(network, true),

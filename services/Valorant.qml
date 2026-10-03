@@ -191,6 +191,7 @@ Singleton {
             abilitySlots: cfg.hud?.abilitySlots ?? true,
             rankWorkspaces: cfg.hud?.rankWorkspaces ?? true,
             killBanners: cfg.hud?.killBanners ?? true,
+            chargeOsd: cfg.hud?.chargeOsd ?? true,
             spikeLock: cfg.hud?.spikeLock ?? true,
             agentSelectLauncher: cfg.hud?.agentSelectLauncher ?? true
         })
@@ -227,6 +228,7 @@ Singleton {
                 abilitySlots: true,
                 rankWorkspaces: true,
                 killBanners: true,
+                chargeOsd: true,
                 spikeLock: true,
                 agentSelectLauncher: true
             }
@@ -234,6 +236,11 @@ Singleton {
 
     // Emitted whenever anything that affects the generated colour scheme changes
     signal schemeInputsChanged
+
+    // Whether a redesigned HUD component should replace the stock one
+    function hudOn(key: string): bool {
+        return enabled && (hud[key] ?? true);
+    }
 
     function validColour(c: var): bool {
         return typeof c === "string" && /^#([0-9a-f]{6}|[0-9a-f]{8})$/i.test(c);

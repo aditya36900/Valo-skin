@@ -29,10 +29,25 @@ switch at any time.
 | Material Symbols **Sharp** icons (bundled) | ✅ |
 | Original crosshair emblem and tactical wallpaper | ✅ |
 | Hot-reloaded `valorant.json`, launcher actions and IPC for agents, accent, mode | ✅ |
-| HUD bar: round-timer clock, ability-slot status icons, rank-style workspaces | 🔜 Phase 2 |
-| Spike-plant lock screen, kill-banner notifications, ability-charge OSD | 🔜 Phase 2 |
+| **HUD bar**: round-timer clock (drains every minute, red for the last 10 s), ability-slot status icons with charge pips, diamond rank-pip workspaces | ✅ |
+| **Spike-plant lock screen**: typing fills the defuse bar; planted, defusing, failed (with shake), detonated and defused states | ✅ |
+| **Kill-banner notifications**: slanted chamfered cards with urgency-coloured stripe and arrival flash | ✅ |
+| **Ability-charge OSD**: volume, mic and brightness as stacked charge pips that turn gold at max | ✅ |
+| Every HUD piece can be turned off on its own in `valorant.json` → `hud` | ✅ |
 | Agent-select launcher, match-stats dashboard, agent picker in settings | 🔜 Phase 3 |
 | Hyprland, terminal, fastfetch, GTK/Qt, cursor themes and a one-shot installer | 🔜 Phase 4 |
+
+## Previews
+
+Offscreen renders of the real components (stubbed system data):
+
+| Bar | Spike lock | OSD + kill banners |
+|---|---|---|
+| <img src="docs/previews/bar.png" width="180"> | <img src="docs/previews/spike-lock.png" width="320"> | <img src="docs/previews/osd-killbanners.png" width="380"> |
+
+Chamfer-mode panel shader (navy = panels and screen frame):
+
+<img src="docs/previews/chamfer-panels.png" width="450">
 
 ## Install
 
@@ -90,6 +105,7 @@ its defaults:
 | `appearance.font.{headline,title,label}.uppercase` | `true` | new option |
 | `appearance.font.{headline,title,label}.letterSpacing` | `1` / `1.5` / `0.8` | new option |
 | `border.thickness` / `rounding` / `smoothing` | `8` / `18` / `12` | `10` / `25` / `20` |
+| `bar.statusIcons` → `audio` | enabled | disabled |
 
 ### Switching agents
 

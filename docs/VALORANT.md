@@ -39,33 +39,35 @@ by luminance for contrast.
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `chamfer` | int (px) | `10` | Bevel size for panels (dashboard, launcher, sidebar, popouts, settings). Small blobs use half. `0` turns chamfer mode off, so panels use `appearance.rounding` instead. |
-| `cornerBrackets` | bool | `true` | HUD corner brackets on cards *(Phase 2)*. |
-| `accentBar` | bool | `true` | Red accent bar on headers and active items *(Phase 2)*. |
-| `borderWidth` | int (px) | `1` | Outline width for HUD frames *(Phase 2)*. |
+| `cornerBrackets` | bool | `true` | HUD corner brackets around the spike-lock defuse bar (more surfaces in Phase 3). |
+| `accentBar` | bool | `true` | Urgency-coloured stripe on kill-banner notifications. |
+| `borderWidth` | int (px) | `1` | Reserved for HUD frame outlines *(Phase 3)*. |
 
 The screen-frame bevel is `border.rounding` in `shell.json` (default `18`). How sharp the bevels
 are where panels meet the frame is `border.smoothing` (default `12`; lower is tighter).
 
-## `fx` *(Phase 2)*
+## `fx`
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `intensity` | 0–2 | `1` | Scales HUD animation strength. `0` turns effects off. |
-| `glitch` | bool | `true` | Glitch transitions on panel open and agent switch. |
-| `scanlines` | bool | `false` | Subtle scanline overlay on panels. |
+| `intensity` | 0–2 | `1` | HUD effect strength: spike pulse, failed-defuse shake and kill-banner flash (flash brightness scales up to 1). `0` turns them all off. |
+| `glitch` | bool | `true` | Reserved: glitch transition on agent switch *(Phase 3)*. |
+| `scanlines` | bool | `false` | Reserved: scanline overlay on panels *(Phase 3)*. |
 
-## `hud` *(Phases 2–3)*
+## `hud`
 
 Each of these turns one redesigned component on or off. `false` keeps the stock Caelestia version.
+They all also require `enabled: true`.
 
 | Key | Component |
 |---|---|
-| `roundTimerClock` | Bar clock styled as the round timer |
-| `abilitySlots` | Status icons shown as ability slots |
-| `rankWorkspaces` | Workspaces as rank/round pips |
-| `killBanners` | Notifications as kill banners |
-| `spikeLock` | Spike-plant lock screen with defuse-bar password input |
-| `agentSelectLauncher` | Agent-select grid in the launcher |
+| `roundTimerClock` | Bar clock as the round timer: stacked HH/MM with a bar that drains each minute and turns red for the last 10 seconds |
+| `abilitySlots` | Bar status icons in chamfered ability slots with keybind hints; audio, mic, network and battery show 4-pip charge levels |
+| `rankWorkspaces` | Bar workspaces as diamond pips (faint = empty, filled = occupied, large on a chamfered highlight = active) |
+| `killBanners` | Notification popups as kill-feed banners (accent: red = critical, agent colour = normal, grey = low) |
+| `chargeOsd` | Volume/mic/brightness sliders as ability charge meters; turn gold at 100% |
+| `spikeLock` | Lock screen password input as a spike defuse bar |
+| `agentSelectLauncher` | Agent-select grid in the launcher *(Phase 3)* |
 
 ## Agents
 
