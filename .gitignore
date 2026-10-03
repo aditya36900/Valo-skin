@@ -4,4 +4,5 @@
 build/
 .cache/
 logs
-build-fedora/__pycache__/
+build-fedora/
+__pycache__/
