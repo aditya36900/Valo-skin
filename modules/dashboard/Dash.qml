@@ -1,4 +1,5 @@
 import "dash"
+import QtQuick
 import QtQuick.Layouts
 import Caelestia.Config
 import qs.components
