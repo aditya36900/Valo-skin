@@ -117,7 +117,7 @@ ColumnLayout {
         id: repeater
 
         model: ScriptModel {
-            values: root.Config.bar.entries.values.filter(e => e.enabled)
+            values: Valorant.barEntries(root.Config.bar.entries.values)
         }
 
         DelegateChooser {

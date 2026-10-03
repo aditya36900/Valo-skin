@@ -18,13 +18,12 @@ Column {
     id: root
 
     readonly property real tileSize: Tokens.sizes.bar.innerWidth - Tokens.padding.small
-    readonly property alias list: list
 
     // The tile under a y coordinate in this item's space, for the bar's hover popout
     function tileAt(y: real): var {
-        const p = mapToItem(list.contentItem, list.width / 2, y);
-        const tile = list.itemAt(p.x, p.y);
-        return tile ? {
+        const p = mapToItem(tiles, tiles.width / 2, y);
+        const tile = tiles.childAt(p.x, p.y);
+        return tile?.modelData ? {
             tile: tile,
             item: tile.modelData
         } : null;
@@ -32,83 +31,95 @@ Column {
 
     spacing: Tokens.spacing.small
 
-    ListView {
-        id: list
+    // A plain Column + Repeater (not a ListView): every tile always exists, so the list can't get
+    // stuck showing only the tiles that fit while it was momentarily empty during a model update
+    Flickable {
+        id: scroller
 
         anchors.horizontalCenter: parent.horizontalCenter
         width: root.tileSize
-        implicitHeight: Math.min(contentHeight, Screen.height * 0.45)
+        implicitHeight: Math.min(tiles.implicitHeight, Screen.height > 0 ? Screen.height * 0.45 : tiles.implicitHeight)
         height: implicitHeight
-        spacing: Tokens.spacing.extraSmall
+        contentHeight: tiles.implicitHeight
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         interactive: contentHeight > height
-        model: TaskbarState.items
 
-        delegate: Item {
-            id: tile
-
-            required property var modelData
-            readonly property bool active: modelData.active ?? false
-            readonly property bool minimized: modelData.minimized ?? false
-            readonly property bool pinnedOnly: modelData.pinnedOnly ?? false
-            readonly property bool hovered: area.containsMouse
+        Column {
+            id: tiles
 
             width: root.tileSize
-            height: root.tileSize
+            spacing: Tokens.spacing.extraSmall
 
-            ChamferRect {
-                anchors.fill: parent
-                chamfer: Valorant.chamferSmall
-                topRight: 0
-                bottomLeft: 0
-                color: tile.active ? Qt.alpha(Colours.palette.m3primary, 0.22) : tile.hovered ? Colours.layer(Colours.palette.m3surfaceContainerHighest, 2) : tile.pinnedOnly ? "transparent" : Colours.tPalette.m3surfaceContainerHigh
-                borderColor: tile.active ? Colours.palette.m3primary : tile.minimized ? Qt.alpha(Colours.palette.m3outline, 0.6) : "transparent"
-                borderWidth: 1
-            }
+            Repeater {
+                model: TaskbarState.items
 
-            // Running indicator on the left edge: long for the active window, short otherwise
-            Rectangle {
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
-                visible: !tile.pinnedOnly
-                width: 3
-                height: tile.active ? parent.height * 0.6 : tile.minimized ? 4 : parent.height * 0.25
-                color: tile.active ? Colours.palette.m3primary : Colours.palette.m3onSurfaceVariant
-                opacity: tile.minimized ? 0.5 : 1
+                delegate: Item {
+                    id: tile
 
-                Behavior on height {
-                    Anim {}
-                }
-            }
+                    required property var modelData
+                    readonly property bool active: modelData.active ?? false
+                    readonly property bool minimized: modelData.minimized ?? false
+                    readonly property bool pinnedOnly: modelData.pinnedOnly ?? false
+                    readonly property bool hovered: area.containsMouse
 
-            IconImage {
-                anchors.centerIn: parent
-                implicitSize: Math.round(root.tileSize * 0.62)
-                asynchronous: true
-                source: tile.modelData.entry?.icon ? Quickshell.iconPath(tile.modelData.entry.icon, "image-missing") : Icons.getAppIcon(tile.modelData.appClass ?? "", "image-missing")
-                opacity: tile.minimized ? 0.4 : tile.pinnedOnly ? 0.75 : 1
-                scale: area.pressed ? 0.88 : 1
+                    width: root.tileSize
+                    height: root.tileSize
 
-                Behavior on scale {
-                    Anim {}
-                }
-            }
+                    ChamferRect {
+                        anchors.fill: parent
+                        chamfer: Valorant.chamferSmall
+                        topRight: 0
+                        bottomLeft: 0
+                        color: tile.active ? Qt.alpha(Colours.palette.m3primary, 0.22) : tile.hovered ? Colours.layer(Colours.palette.m3surfaceContainerHighest, 2) : tile.pinnedOnly ? "transparent" : Colours.tPalette.m3surfaceContainerHigh
+                        borderColor: tile.active ? Colours.palette.m3primary : tile.minimized ? Qt.alpha(Colours.palette.m3outline, 0.6) : "transparent"
+                        borderWidth: 1
+                    }
 
-            MouseArea {
-                id: area
+                    // Running indicator on the left edge: long for the active window, short otherwise
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: !tile.pinnedOnly
+                        width: 3
+                        height: tile.active ? parent.height * 0.6 : tile.minimized ? 4 : parent.height * 0.25
+                        color: tile.active ? Colours.palette.m3primary : Colours.palette.m3onSurfaceVariant
+                        opacity: tile.minimized ? 0.5 : 1
 
-                anchors.fill: parent
-                hoverEnabled: true
-                acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
-                cursorShape: Qt.PointingHandCursor
-                onClicked: event => {
-                    if (event.button === Qt.MiddleButton)
-                        TaskbarState.close(tile.modelData);
-                    else if (event.button === Qt.RightButton)
-                        TaskbarState.togglePin(tile.modelData);
-                    else
-                        TaskbarState.activate(tile.modelData);
+                        Behavior on height {
+                            Anim {}
+                        }
+                    }
+
+                    IconImage {
+                        anchors.centerIn: parent
+                        implicitSize: Math.round(root.tileSize * 0.62)
+                        asynchronous: true
+                        source: tile.modelData.entry?.icon ? Quickshell.iconPath(tile.modelData.entry.icon, "image-missing") : Icons.getAppIcon(tile.modelData.appClass ?? "", "image-missing")
+                        opacity: tile.minimized ? 0.4 : tile.pinnedOnly ? 0.75 : 1
+                        scale: area.pressed ? 0.88 : 1
+
+                        Behavior on scale {
+                            Anim {}
+                        }
+                    }
+
+                    MouseArea {
+                        id: area
+
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: event => {
+                            if (event.button === Qt.MiddleButton)
+                                TaskbarState.close(tile.modelData);
+                            else if (event.button === Qt.RightButton)
+                                TaskbarState.togglePin(tile.modelData);
+                            else
+                                TaskbarState.activate(tile.modelData);
+                        }
+                    }
                 }
             }
         }

@@ -437,6 +437,64 @@ Singleton {
         return true;
     }
 
+    // Bar layouts saved before Valo-skin features existed (an explicit list in shell.json, or a
+    // plugin built from older sources) don't mention the new entries, so add them here instead of
+    // relying on the plugin defaults. An entry the user lists, even disabled, is left as is.
+    function barEntries(list: var): var {
+        let out = Array.from(list ?? []).map(e => ({
+                    id: e.id,
+                    enabled: e.enabled
+                }));
+        const has = id => out.some(e => e.id === id);
+        const insertAfter = (afterId, entry) => {
+            const i = out.findIndex(e => e.id === afterId);
+            out = i < 0 ? [...out, entry] : [...out.slice(0, i + 1), entry, ...out.slice(i + 1)];
+        };
+        if (!has("layout"))
+            insertAfter("workspaces", {
+                id: "layout",
+                enabled: true
+            });
+        if (!has("taskbar")) {
+            // The taskbar takes over from the active-window title and the bench
+            const i = out.findIndex(e => e.id === "activeWindow");
+            const entry = {
+                id: "taskbar",
+                enabled: true
+            };
+            if (i >= 0)
+                out = [...out.slice(0, i), entry, ...out.slice(i + 1)];
+            else
+                insertAfter("layout", entry);
+            out = out.filter(e => e.id !== "bench");
+        }
+        return out.filter(e => e.enabled);
+    }
+
+    function statusEntries(list: var): var {
+        let out = Array.from(list ?? []).map(e => ({
+                    id: e.id,
+                    enabled: e.enabled
+                }));
+        const has = id => out.some(e => e.id === id);
+        if (!has("privacy")) {
+            const i = out.findIndex(e => e.id === "lockStatus");
+            out = [...out.slice(0, i + 1),
+                {
+                    id: "privacy",
+                    enabled: true
+                },
+                ...out.slice(i + 1)];
+        }
+        for (const id of ["phone", "updates"])
+            if (!has(id))
+                out.push({
+                    id: id,
+                    enabled: true
+                });
+        return out.filter(e => e.enabled);
+    }
+
     function agentArtFile(id: string, kind: string): string {
         return `file://${agentArtDir}/${id}${kind ? `-${kind}` : ""}.png`;
     }

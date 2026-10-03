@@ -69,7 +69,7 @@ StyledRect {
             model: ScriptModel {
                 id: model
 
-                values: root.Config.bar.statusIcons.values.filter(e => e.enabled)
+                values: Valorant.statusEntries(root.Config.bar.statusIcons.values)
             }
 
             DelegateChooser {

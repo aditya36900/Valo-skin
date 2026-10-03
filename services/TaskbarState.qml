@@ -139,6 +139,9 @@ Singleton {
         Valorant.set("taskbar.pinned", isPinned(item) ? pinned.filter(p => p !== id && p !== item.id) : [...pinned, id]);
     }
 
+    // Fill in window classes (icons, pin ids) right away instead of on the next window event
+    Component.onCompleted: Hyprland.refreshToplevels()
+
     IpcHandler {
         function next(): void {
             root.cycle(1);
