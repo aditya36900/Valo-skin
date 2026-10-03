@@ -148,7 +148,7 @@ ColumnLayout {
             DelegateChoice {
                 roleValue: "bench"
                 delegate: EntryWrapper {
-                    Bench {
+                    BenchTray {
                         objectName: "taskbarBench"
                     }
                 }

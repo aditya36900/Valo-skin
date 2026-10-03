@@ -90,6 +90,18 @@ def check(path: Path) -> list[str]:
     return problems
 
 
+def singleton_clashes() -> list[str]:
+    """A services/ or utils/ singleton and a component sharing a name: whichever wins in a file
+    that imports both, one of them breaks (and the whole shell refuses to load)."""
+    singletons = {f.stem: f for top in ("services", "utils") for f in (ROOT / top).glob("*.qml") if "pragma Singleton" in f.read_text()}
+    out = []
+    for top in ("components", "modules"):
+        for f in (ROOT / top).rglob("*.qml"):
+            if f.stem in singletons:
+                out.append(f"{f.relative_to(ROOT)}: same name as singleton {singletons[f.stem].relative_to(ROOT)}")
+    return out
+
+
 def main() -> int:
     if len(sys.argv) > 1:
         files = [Path(a) for a in sys.argv[1:]]
@@ -97,6 +109,9 @@ def main() -> int:
         out = subprocess.run(["git", "ls-files", "*.qml"], cwd=ROOT, capture_output=True, text=True, check=True)
         files = [ROOT / f for f in out.stdout.split()]
     bad = 0
+    for problem in singleton_clashes():
+        print(problem)
+        bad += 1
     for f in files:
         for problem in check(f):
             print(f"{f.relative_to(ROOT) if f.is_absolute() else f}: {problem}")
